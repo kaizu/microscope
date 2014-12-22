@@ -4,18 +4,80 @@
 using namespace microscope;
 
 
-int main()
+void test_point_spreading_function_cutoff(double k, double N_A)
 {
-    const double lambda(508); // nm
-    const double N_A(1.4);
-    const double k(2 * M_PI / lambda);
     const double alpha_inv(1.0 / (k * N_A));
     const double psi_inv(2 * alpha_inv / N_A);
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(16);
 
-    std::cout << int_psf_cylinder(0, 10 * alpha_inv, 0, k, N_A) << std::endl;
+    std::cout << "alpha = " << 1.0 / alpha_inv << std::endl;
+    std::cout << "1 um corresponds to " << 1000 / alpha_inv << " / alpha" << std::endl;
+    const double z(0.0 * psi_inv * 0.5);
+    const double I0(int_psf_cylinder(0, 1000, z, k, N_A));
+    const double I1(int_psf_cylinder(0, 10000, z, k, N_A));
+    const double I2(int_psf_cylinder(0, 30000, z, k, N_A));
+    const double I3(int_psf_cylinder(0, 50000, z, k, N_A));
+    std::cout << "The integration over r < 1 um = " << I0 << std::endl;
+    std::cout << "An integration over r < 10 um = " << I1 << std::endl;
+    std::cout << "An integration over r < 30 um = " << I2 << std::endl;
+    std::cout << "An integration over r < 50 um = " << I3 << std::endl;
+    std::cout << "The relative error  1-50 um = " << (I3 - I0) / I3 << std::endl;
+    std::cout << "The relative error 10-50 um = " << (I3 - I1) / I3 << std::endl;
+    std::cout << "The relative error 30-50 um = " << (I3 - I2) / I3 << std::endl;
+}
+
+double int_psf_with_cutoff(
+    double p[3], double c[3], double k, double N_A,
+    double xmin, double xmax, double ymin, double ymax,
+    double cutoff)
+{
+    const double rsq_min(
+        std::min(gsl_pow_2(p[0] - c[0] - xmin), gsl_pow_2(p[0] - c[0] - xmax))
+        + std::min(gsl_pow_2(p[1] - c[1] - ymin), gsl_pow_2(p[1] - c[1] - ymax)));
+    if (rsq_min >= cutoff * cutoff)
+    {
+        return 0.0;
+    }
+    else
+    {
+        const double result(int_psf(xmin, xmax, ymin, ymax, p, c, k, N_A));
+        return result;
+    }
+}
+
+int main()
+{
+    const double lambda(508); // nm
+    const double N_A(1.4);
+    const double k(2 * M_PI / lambda);
+
+    // test_point_spreading_function_cutoff(k, N_A);
+
+    const unsigned int N_pixel(600);
+    const double pixel_length(6500 / 100);
+    const double L(pixel_length * N_pixel);
+
+    double p[] = {0, 0, 0};
+    double c[] = {0, 0, 0};
+    const double cutoff(1000);
+
+    std::cout.setf(std::ios::scientific);
+    std::cout.precision(16);
+    for (unsigned int i(0); i < N_pixel; ++i)
+    {
+        const double xmin(pixel_length * (i - N_pixel * 0.5));
+        const double xmax(xmin + pixel_length);
+        for (unsigned int j(0); j < N_pixel; ++j)
+        {
+            const double ymin(pixel_length * (j - N_pixel * 0.5));
+            const double ymax(ymin + pixel_length);
+
+            std::cout << int_psf_with_cutoff(
+                p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff) << std::endl;
+        }
+    }
 
     // for (unsigned int i(0); i < 200; ++i)
     // {

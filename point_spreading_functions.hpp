@@ -65,7 +65,8 @@ double int_psf(
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
-    return integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
+    return gsl_pow_2(k * N_A * N_A / (2 * M_PI))
+        * integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
 }
 
 struct PSF_cylinder_params
@@ -85,7 +86,7 @@ double int_psf_cylinder(
     double rmin, double rmax, double z, double k, double N_A)
 {
     struct PSF_cylinder_params params = {z, k, N_A};
-    return integrate1d(&PSF_cylinder, &params, rmin, rmax);
+    return gsl_pow_2(k * N_A * N_A) * integrate1d(&PSF_cylinder, &params, rmin, rmax);
 }
 
 } // microscope
