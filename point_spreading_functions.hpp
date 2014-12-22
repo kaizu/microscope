@@ -68,6 +68,26 @@ double int_psf(
     return integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
 }
 
+struct PSF_cylinder_params
+{
+    double z;
+    double k;
+    double N_A;
+};
+
+double PSF_cylinder(double r, void *params)
+{
+    struct PSF_cylinder_params *p = (struct PSF_cylinder_params *) params;
+    return r * born_wolf_psf(r, p->z, p->k, p->N_A);
+}
+
+double int_psf_cylinder(
+    double rmin, double rmax, double z, double k, double N_A)
+{
+    struct PSF_cylinder_params params = {z, k, N_A};
+    return integrate1d(&PSF_cylinder, &params, rmin, rmax);
+}
+
 } // microscope
 
 #endif /* __MICROSCOPE__POINT_SPREADING_FUNCTIONS */
