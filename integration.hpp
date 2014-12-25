@@ -8,6 +8,32 @@
 namespace microscope
 {
 
+
+double integrate1d_simpson(
+    double (* function)(double, void*), void * params,
+    double xmin, double xmax)
+{
+    const unsigned int N(2);
+    const double delta((xmax - xmin) / N);
+
+    double result;
+
+    result = (* function)(xmin, params);
+    result += (* function)(xmin + delta * N, params);
+
+    for (unsigned int i(1); i < N; i += 2)
+    {
+        result += 4.0 * (* function)(xmin + delta * i, params);
+    }
+
+    for(unsigned int i(2); i < N; i += 2)
+    {
+        result += 2.0 * (* function)(xmin + delta * i, params);
+    }
+
+    return result * delta / 3.0;
+}
+
 double integrate1d_gsl_qng(
     double (* function)(double, void*), void * params,
     double xmin, double xmax)
@@ -71,11 +97,11 @@ struct Fx_params
     void* params;
 };
 
-double Fx(double x, void *params)
+double Fx_gsl_qags(double x, void *params)
 {
     struct Fx_params *p = (struct Fx_params *) params;
     struct Fxy_params newp = {x, p->function, p->params};
-    return integrate1d(&Fxy, &newp, p->ymin, p->ymax);
+    return integrate1d_gsl_qags(&Fxy, &newp, p->ymin, p->ymax);
 }
 
 double integrate2d_gsl_qags(
@@ -83,7 +109,22 @@ double integrate2d_gsl_qags(
     double xmin, double xmax, double ymin, double ymax)
 {
     struct Fx_params p = {ymin, ymax, function, params};
-    return integrate1d_gsl_qags(&Fx, &p, xmin, xmax);
+    return integrate1d_gsl_qags(&Fx_gsl_qags, &p, xmin, xmax);
+}
+
+double Fx_simpson(double x, void *params)
+{
+    struct Fx_params *p = (struct Fx_params *) params;
+    struct Fxy_params newp = {x, p->function, p->params};
+    return integrate1d_simpson(&Fxy, &newp, p->ymin, p->ymax);
+}
+
+double integrate2d_simpson(
+    double (* function)(double, double, void*), void * params,
+    double xmin, double xmax, double ymin, double ymax)
+{
+    struct Fx_params p = {ymin, ymax, function, params};
+    return integrate1d_simpson(&Fx_simpson, &p, xmin, xmax);
 }
 
 struct hcubature_params

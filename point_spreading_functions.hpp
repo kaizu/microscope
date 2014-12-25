@@ -42,6 +42,18 @@ double born_wolf_psf(const double r, const double z, const double k, const doubl
     return result_real * result_real + result_imag * result_imag;
 }
 
+double born_wolf_psf_simpson(const double r, const double z, const double k, const double N_A)
+{
+    const double alpha(N_A * k);
+    const double alpha_r(alpha * r);
+    const double psi(0.5 * alpha * z * N_A);
+
+    struct F_born_wolf_psf_params params = {alpha_r, psi};
+    const double result_real(integrate1d_simpson(&F_born_wolf_psf_real, &params, 0.0, 1.0));
+    const double result_imag(integrate1d_simpson(&F_born_wolf_psf_imag, &params, 0.0, 1.0));
+    return result_real * result_real + result_imag * result_imag;
+}
+
 struct PSF_params
 {
     double p[3];
@@ -65,8 +77,29 @@ double int_psf(
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
-    return gsl_pow_2(k * N_A * N_A / (2 * M_PI))
-        * integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
+    const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
+    return C * integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
+}
+
+double PSF_simpson(double x, double y, void *params)
+{
+    struct PSF_params *p = (struct PSF_params *) params;
+
+    const double dx(p->p[0] - x);
+    const double dy(p->p[1] - y);
+    const double rsq(dx * dx + dy * dy);
+    return born_wolf_psf_simpson(sqrt(rsq), p->p[2], p->k, p->N_A);
+}
+
+double int_psf_simpson(
+    double xmin, double xmax, double ymin, double ymax,
+    double p[3], double c[3], double k, double N_A)
+{
+    struct PSF_params params = {
+        {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
+    const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
+    return C * integrate2d_simpson(&PSF, &params, xmin, xmax, ymin, ymax);
+    // return C * integrate2d_simpson(&PSF_simpson, &params, xmin, xmax, ymin, ymax);
 }
 
 struct PSF_cylinder_params
