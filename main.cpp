@@ -1,4 +1,6 @@
 #include <iostream>
+#include <gsl/gsl_rng.h>
+#include <boost/array.hpp>
 
 #include "point_spreading_functions.hpp"
 using namespace microscope;
@@ -47,6 +49,44 @@ double int_psf_with_cutoff(
     }
 }
 
+double overlay_psf(
+    double data[], unsigned int N_pixel, double pixel_length,
+    double p[3], double c[3], double k, double N_A,
+    double cutoff)
+{
+    for (unsigned int i(0); i < N_pixel; ++i)
+    {
+        const double xmin(pixel_length * (i - N_pixel * 0.5));
+        const double xmax(xmin + pixel_length);
+        for (unsigned int j(0); j < N_pixel; ++j)
+        {
+            const double ymin(pixel_length * (j - N_pixel * 0.5));
+            const double ymax(ymin + pixel_length);
+
+            const double value(int_psf_with_cutoff(
+                p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff));
+            data[i * N_pixel + j] += value;
+        }
+    }
+}
+
+void generate_random_points(
+    double points[][3], const unsigned int N_point, const double L)
+{
+    gsl_rng_env_setup();
+    const gsl_rng_type * T = gsl_rng_default;
+    gsl_rng * r = gsl_rng_alloc(T);
+
+    for (unsigned int i(0); i < N_point; ++i)
+    {
+        points[i][0] = L * (0.5 - gsl_rng_uniform(r));
+        points[i][1] = L * (0.5 - gsl_rng_uniform(r));
+        points[i][2] = 0.0;
+    }
+
+    gsl_rng_free(r);
+}
+
 int main()
 {
     const double lambda(508); // nm
@@ -58,24 +98,32 @@ int main()
     const unsigned int N_pixel(600);
     const double pixel_length(6500 / 100);
     const double L(pixel_length * N_pixel);
+    const double L_2(L * 0.5);
 
-    double p[] = {0, 0, 0};
-    double c[] = {0, 0, 0};
+    // double p[] = {0, 0, 0};
+    double focal_point[] = {0, 0, 0};
+
+    const unsigned int N_point(10);
+    double points[N_point][3];
+    generate_random_points(points, N_point, L);
+
+    boost::array<double, N_pixel * N_pixel> data;
+    data.fill(0.0);
+
     const double cutoff(1000);
+    for (unsigned int i(0); i < N_point; ++i)
+    {
+        overlay_psf(data.data(), N_pixel, pixel_length,
+            points[i], focal_point, k, N_A, cutoff);
+    }
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(16);
     for (unsigned int i(0); i < N_pixel; ++i)
     {
-        const double xmin(pixel_length * (i - N_pixel * 0.5));
-        const double xmax(xmin + pixel_length);
         for (unsigned int j(0); j < N_pixel; ++j)
         {
-            const double ymin(pixel_length * (j - N_pixel * 0.5));
-            const double ymax(ymin + pixel_length);
-
-            std::cout << int_psf_with_cutoff(
-                p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff) << std::endl;
+            std::cout << data[i * N_pixel + j] << std::endl;
         }
     }
 
