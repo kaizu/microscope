@@ -48,7 +48,8 @@ double int_psf_with_cutoff(
     }
     else
     {
-        const double result(int_psf_simpson(xmin, xmax, ymin, ymax, p, c, k, N_A));
+        const double result(int_psf_tbl(xmin, xmax, ymin, ymax, p, c, k, N_A));
+        // const double result(int_psf_simpson(xmin, xmax, ymin, ymax, p, c, k, N_A));
         // const double result(int_psf(xmin, xmax, ymin, ymax, p, c, k, N_A));
         return result;
     }
