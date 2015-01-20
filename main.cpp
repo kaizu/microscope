@@ -133,13 +133,13 @@ int main()
 
     // test_point_spreading_function_cutoff(k, N_A);
 
-    const unsigned int N_pixel(60);
+    const unsigned int N_pixel(600);
     const double pixel_length(6500 / 100);
     const double L(pixel_length * N_pixel);
     const double L_2(L * 0.5);
     double focal_point[] = {0, 0, 0};
 
-    const unsigned int N_point(10);
+    const unsigned int N_point(100);
     double points[N_point][3];
     double intensity[N_point];
     generate_random_points(points, intensity, N_point, L);
@@ -155,9 +155,6 @@ int main()
 
         overlay_psf(data.data(), N_pixel, pixel_length,
             points[i], intensity[i], focal_point, k, N_A, cutoff);
-
-        Itot += intensity[i] * int_psf(
-            -L_2, +L_2, -L_2, +L_2, points[i], focal_point, k, N_A);
     }
 
     save_data("result.txt", data.data(), N_pixel * N_pixel);

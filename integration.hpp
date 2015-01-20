@@ -11,9 +11,8 @@ namespace microscope
 
 double integrate1d_simpson(
     double (* function)(double, void*), void * params,
-    double xmin, double xmax)
+    double xmin, double xmax, const unsigned int N = 10)
 {
-    const unsigned int N(2);
     const double delta((xmax - xmin) / N);
 
     double result;
@@ -75,6 +74,7 @@ inline double integrate1d(
     double xmin, double xmax)
 {
     return integrate1d_gsl_qags(function, params, xmin, xmax);
+    // return integrate1d_gsl_qng(function, params, xmin, xmax);
 }
 
 struct Fxy_params
@@ -146,7 +146,10 @@ double integrate2d_hcubature(
 {
     struct hcubature_params p = {function, params};
     double xmin[2] = {x0min, x1min}, xmax[2] = {x0max, x1max}, val, err;
-    hcubature(1, F_hcubature, &p, 2, xmin, xmax, 0, 0, 1e-4, ERROR_INDIVIDUAL, &val, &err);
+    const double epsabs(1e-8);
+    const double epsrel(1e-8);
+    hcubature(1, F_hcubature, &p, 2, xmin, xmax,
+        0, epsabs, epsrel, ERROR_INDIVIDUAL, &val, &err);
     return val;
 }
 
@@ -155,6 +158,7 @@ inline double integrate2d(
     double xmin, double xmax, double ymin, double ymax)
 {
     return integrate2d_gsl_qags(function, params, xmin, xmax, ymin, ymax);
+    // return integrate2d_hcubature(function, params, xmin, xmax, ymin, ymax);
 }
 
 } // microscope

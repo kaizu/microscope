@@ -42,7 +42,8 @@ double born_wolf_psf(const double r, const double z, const double k, const doubl
     return result_real * result_real + result_imag * result_imag;
 }
 
-double born_wolf_psf_simpson(const double r, const double z, const double k, const double N_A)
+double born_wolf_psf_simpson(
+    const double r, const double z, const double k, const double N_A)
 {
     const double alpha(N_A * k);
     const double alpha_r(alpha * r);
