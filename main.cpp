@@ -59,7 +59,8 @@ double emission(double z)
 {
     const double ATsq(1.16737230263e+25);
     const double d(1.01896194663e+03); // nm
-    const double epsilon(1e-6);
+    // const double epsilon(1e-6);
+    const double epsilon(0.2);
     const double cross_section(1e-9 * 1e-9);
     const double exposure_time(100e-3);
     return ATsq * exp(-z / d) * cross_section * exposure_time * epsilon / (4 * M_PI);
@@ -97,9 +98,10 @@ void generate_random_points(
     {
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
-        points[i][2] = gsl_rng_uniform(r) * 400;
-        // points[i][2] = 0.0;
+        // points[i][2] = gsl_rng_uniform(r) * 400;
+        points[i][2] = 0.0;
         intensity[i] = emission(points[i][2]);
+        std::cout << intensity[i] << std::endl;
     }
 
     gsl_rng_free(r);
