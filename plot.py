@@ -11,6 +11,8 @@ else:
 data = numpy.loadtxt(filename)
 Nsq = len(data)
 N = numpy.sqrt(Nsq)
+print N
+print data.max(), data.sum()
 plt.imshow(data.reshape((N, N)), interpolation='none')
 plt.colorbar()
 plt.show()

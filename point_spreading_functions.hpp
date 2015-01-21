@@ -39,8 +39,10 @@ double born_wolf_psf(const double r, const double z, const double k, const doubl
     const double psi(0.5 * alpha * z * N_A);
 
     struct F_born_wolf_psf_params params = {alpha_r, psi};
-    const double result_real(integrate1d(&F_born_wolf_psf_real, &params, 0.0, 1.0));
-    const double result_imag(integrate1d(&F_born_wolf_psf_imag, &params, 0.0, 1.0));
+    const double result_real(
+        integrate1d(&F_born_wolf_psf_real, &params, 0.0, 1.0));
+    const double result_imag(
+        integrate1d(&F_born_wolf_psf_imag, &params, 0.0, 1.0));
     return result_real * result_real + result_imag * result_imag;
 }
 
@@ -52,9 +54,19 @@ double born_wolf_psf_simpson(
     const double psi(0.5 * alpha * z * N_A);
 
     struct F_born_wolf_psf_params params = {alpha_r, psi};
-    const double result_real(integrate1d_simpson(&F_born_wolf_psf_real, &params, 0.0, 1.0));
-    const double result_imag(integrate1d_simpson(&F_born_wolf_psf_imag, &params, 0.0, 1.0));
+    const double result_real(
+        integrate1d_simpson(&F_born_wolf_psf_real, &params, 0.0, 1.0));
+    const double result_imag(
+        integrate1d_simpson(&F_born_wolf_psf_imag, &params, 0.0, 1.0));
     return result_real * result_real + result_imag * result_imag;
+}
+
+double bilinear_interpolation(
+    const double x, const double y,
+    const double v00, const double v01, const double v10, const double v11)
+{
+    return ((1 - x) * ((1 - y) * v00 + y * v01)
+        + x * ((1 - y) * v10 + y * v11));
 }
 
 double born_wolf_psf_tbl(
@@ -80,7 +92,7 @@ double born_wolf_psf_tbl(
 
     if (n > N || m > M)
     {
-        std::cout << "Out of bounds." << std::endl;
+        std::cerr << "Out of bounds." << std::endl;
         return born_wolf_psf(r, z, k, N_A);
     }
 
@@ -89,8 +101,7 @@ double born_wolf_psf_tbl(
         v10(born_wolf_psf_table::born_wolf_psf_table.y[m * N + n + 1]),
         v01(born_wolf_psf_table::born_wolf_psf_table.y[(m + 1) * N + n]),
         v11(born_wolf_psf_table::born_wolf_psf_table.y[(m + 1) * N + n + 1]);
-    return ((1 - pr) * ((1 - pz) * v00 + pz * v01)
-        + pr * ((1 - pz) * v10 + pz * v11));
+    return bilinear_interpolation(pr, pz, v00, v01, v10, v11);
 }
 
 struct PSF_params
@@ -159,7 +170,6 @@ double int_psf_tbl(
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
     const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
     return C * integrate2d_simpson(&PSF_tbl, &params, xmin, xmax, ymin, ymax);
-    // return C * integrate2d(&PSF_tbl, &params, xmin, xmax, ymin, ymax);
 }
 
 struct PSF_cylinder_params
