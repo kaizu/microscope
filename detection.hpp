@@ -1,5 +1,8 @@
 #ifndef __MICROSCOPE__DETECTION
-#ifndef __MICROSCOPE__DETECTION
+#define __MICROSCOPE__DETECTION
+
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_rng.h>
 
 namespace microscope
 {
@@ -201,16 +204,16 @@ static const double NDist_F40_table[194] = {
     1.726420e-06
 };
 
-double detection_function(const gsl_rng* rng, const double photon)
+double cmos_detection_function(const gsl_rng* rng, const double photons)
 {
     const double QE(0.73); // Quantum Efficiency
     const double background_noise(2.0);
 
     unsigned int signal(
-        gsl_ran_poisson(rng, QE + background_noise));
+        gsl_ran_poisson(rng, QE * photons + background_noise));
 
     gsl_ran_discrete_t *f;
-    f = gsl_ran_discrete_preproc(194, P);
+    f = gsl_ran_discrete_preproc(194, NDist_F40_table);
     size_t k = gsl_ran_discrete(rng, f);
     const double noise(0.6 + k * 0.1);
 
@@ -219,10 +222,28 @@ double detection_function(const gsl_rng* rng, const double photon)
     return photoelectrons;
 }
 
-double convert_analog_to_digital(const double photoelectrons);
+unsigned int convert_analog_to_digital_with_no_fixed_pattern_noise(
+    const double photoelectrons)
 {
-    // fullwell, ADC_max: 30000 65535
-    // k, ADC0: 0.458463231249 100
+    const double fullwell(30000);
+    const double ADC0(100);
+    const unsigned int bit(16);
+    const unsigned int ADC_max(pow(2, bit) - 1);
+
+    // FPN_type == None
+    const double offset(ADC0);
+    const double gain((fullwell - 0.0) / (ADC_max - offset));
+    // const double gain((fullwell - 0.0) / (pow(2.0, bit) - offset));
+
+    const double ADC(
+        std::min(photoelectrons, fullwell) / gain + offset);
+    return std::max(
+        std::min(static_cast<unsigned int>(ADC), ADC_max), (unsigned int)(0));
+}
+
+inline unsigned int convert_analog_to_digital(const double photoelectrons)
+{
+    return convert_analog_to_digital_with_no_fixed_pattern_noise(photoelectrons);
 }
 
 } // microscope
