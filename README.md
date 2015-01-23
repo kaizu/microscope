@@ -2,6 +2,13 @@ microscope
 ==========
 
 ```
-$ g++ -Icubature-1.0.2 main.cpp cubature-1.0.2/hcubature.c -lgsl -lcblas
+$ g++ generatetable.cpp -lgsl -lcblas
 $ ./a.out
+$ g++ main.cpp -lgsl -lcblas
+$ ./a.out
+$ python plot.py
+```
+
+```
+$ g++ -Icubature-1.0.2 -DCUBATURE main.cpp cubature-1.0.2/hcubature.c -lgsl -lcblas
 ```
