@@ -6,7 +6,8 @@
 #include <boost/array.hpp>
 #include <boost/range/numeric.hpp>
 
-#include "point_spreading_functions.hpp"
+// #include "point_spreading_functions.hpp"
+#include "born_wolf_psf.hpp"
 using namespace microscope;
 
 
