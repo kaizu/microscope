@@ -100,7 +100,7 @@ double int_psf(
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
-    const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
+    const double C(born_wolf_psf_normalizing_constant(p[2] - c[2], k, N_A));
     return C * integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
 }
 
@@ -120,7 +120,7 @@ double int_psf_simpson(
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
-    const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
+    const double C(born_wolf_psf_normalizing_constant(p[2] - c[2], k, N_A));
     return C * integrate2d_simpson(&PSF, &params, xmin, xmax, ymin, ymax);
     // return C * integrate2d_simpson(&PSF_simpson, &params, xmin, xmax, ymin, ymax);
 }
@@ -141,7 +141,7 @@ double int_psf_tbl(
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
-    const double C(gsl_pow_2(k * N_A * N_A / (2 * M_PI)));
+    const double C(born_wolf_psf_normalizing_constant(p[2] - c[2], k, N_A));
     return C * integrate2d_simpson(&PSF_tbl, &params, xmin, xmax, ymin, ymax);
 }
 
@@ -162,7 +162,8 @@ double int_psf_cylinder(
     double rmin, double rmax, double z, double k, double N_A)
 {
     struct PSF_cylinder_params params = {z, k, N_A};
-    return gsl_pow_2(k * N_A * N_A) * integrate1d(&PSF_cylinder, &params, rmin, rmax);
+    const double C(born_wolf_psf_normalizing_constant(z, k, N_A));
+    return (2 * M_PI) * C * integrate1d(&PSF_cylinder, &params, rmin, rmax);
 }
 
 } // microscope
