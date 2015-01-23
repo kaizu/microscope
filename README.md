@@ -2,7 +2,7 @@ microscope
 ==========
 
 ```
-$ g++ generatetable.cpp -lgsl -lcblas
+$ g++ generate_table.cpp -lgsl -lcblas
 $ ./a.out
 $ g++ main.cpp -lgsl -lcblas
 $ ./a.out
