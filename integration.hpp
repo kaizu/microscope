@@ -2,8 +2,10 @@
 #define __MICROSCOPE__INTEGRATION
 
 #include <gsl/gsl_integration.h>
-#include "cubature.h"
 
+#ifdef CUBATURE
+#include "cubature.h"
+#endif /* CUBATURE */
 
 namespace microscope
 {
@@ -127,6 +129,8 @@ double integrate2d_simpson(
     return integrate1d_simpson(&Fx_simpson, &p, xmin, xmax);
 }
 
+#ifdef CUBATURE
+
 struct hcubature_params
 {
     double (* function)(double, double, void*);
@@ -152,6 +156,8 @@ double integrate2d_hcubature(
         0, epsabs, epsrel, ERROR_INDIVIDUAL, &val, &err);
     return val;
 }
+
+#endif /* CUBATURE */
 
 inline double integrate2d(
     double (* function)(double, double, void*), void * params,
