@@ -61,12 +61,13 @@ double emission(double z)
     const double ATsq(1.16737230263e+25);
     const double d(1.01896194663e+03); // nm
     // const double epsilon(1e-6);
-    // const double epsilon(1.0);
-    const double epsilon(0.01);
+    const double epsilon(1.0);
     const double absorption_cross_section(2e-18);
     // const double absorption_cross_section(1e-9 * 1e-9);
     const double exposure_time(100e-3);
-    return ATsq * exp(-z / d) * absorption_cross_section * exposure_time * epsilon / (4 * M_PI);
+
+    return (ATsq * exp(-z / d) * absorption_cross_section
+        * exposure_time * epsilon / (4 * M_PI));
 }
 
 void overlay_psf(
@@ -97,12 +98,20 @@ void generate_random_points(
     const gsl_rng_type * T = gsl_rng_default;
     gsl_rng * r = gsl_rng_alloc(T);
 
-    for (unsigned int i(0); i < N_point; ++i)
+    for (unsigned int i(0); i < N_point - 200; ++i)
     {
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
-        points[i][2] = gsl_rng_uniform(r) * 1000;
+        points[i][2] = gsl_rng_uniform(r) * 3000;
         // points[i][2] = 0.0;
+        intensity[i] = emission(points[i][2]);
+    }
+
+    for (unsigned int i(N_point - 200); i < N_point; ++i)
+    {
+        points[i][0] = L * (0.5 - gsl_rng_uniform(r));
+        points[i][1] = L * (0.5 - gsl_rng_uniform(r));
+        points[i][2] = 0.0;
         intensity[i] = emission(points[i][2]);
     }
 
@@ -137,13 +146,14 @@ int main()
     const double k(2 * M_PI / lambda);
 
     // test_point_spreading_function_cutoff(k, N_A);
+
     const unsigned int N_pixel(600);
     const double pixel_length(6500 / 100);
     const double L(pixel_length * N_pixel);
     const double L_2(L * 0.5);
     double focal_point[] = {0, 0, 0};
 
-    const unsigned int N_point(1000);
+    const unsigned int N_point(16200);
     double points[N_point][3];
     double intensity[N_point];
     generate_random_points(points, intensity, N_point, L);
