@@ -7,6 +7,7 @@
 #include <boost/range/numeric.hpp>
 
 #include "point_spreading_functions.hpp"
+#include "detection.hpp"
 using namespace microscope;
 
 
@@ -60,10 +61,12 @@ double emission(double z)
     const double ATsq(1.16737230263e+25);
     const double d(1.01896194663e+03); // nm
     // const double epsilon(1e-6);
-    const double epsilon(0.2);
-    const double cross_section(1e-9 * 1e-9);
+    // const double epsilon(1.0);
+    const double epsilon(0.01);
+    const double absorption_cross_section(2e-18);
+    // const double absorption_cross_section(1e-9 * 1e-9);
     const double exposure_time(100e-3);
-    return ATsq * exp(-z / d) * cross_section * exposure_time * epsilon / (4 * M_PI);
+    return ATsq * exp(-z / d) * absorption_cross_section * exposure_time * epsilon / (4 * M_PI);
 }
 
 void overlay_psf(
@@ -98,10 +101,9 @@ void generate_random_points(
     {
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
-        // points[i][2] = gsl_rng_uniform(r) * 400;
-        points[i][2] = 0.0;
+        points[i][2] = gsl_rng_uniform(r) * 1000;
+        // points[i][2] = 0.0;
         intensity[i] = emission(points[i][2]);
-        std::cout << intensity[i] << std::endl;
     }
 
     gsl_rng_free(r);
@@ -135,14 +137,13 @@ int main()
     const double k(2 * M_PI / lambda);
 
     // test_point_spreading_function_cutoff(k, N_A);
-
     const unsigned int N_pixel(600);
     const double pixel_length(6500 / 100);
     const double L(pixel_length * N_pixel);
     const double L_2(L * 0.5);
     double focal_point[] = {0, 0, 0};
 
-    const unsigned int N_point(100);
+    const unsigned int N_point(1000);
     double points[N_point][3];
     double intensity[N_point];
     generate_random_points(points, intensity, N_point, L);
@@ -150,6 +151,7 @@ int main()
     boost::array<double, N_pixel * N_pixel> data;
     data.fill(0.0);
 
+    // const double cutoff(20000);
     const double cutoff(1000);
     double Itot(0.0);
     for (unsigned int i(0); i < N_point; ++i)
@@ -158,12 +160,33 @@ int main()
 
         overlay_psf(data.data(), N_pixel, pixel_length,
             points[i], intensity[i], focal_point, k, N_A, cutoff);
+        Itot += intensity[i];
     }
-
-    save_data("result.txt", data.data(), N_pixel * N_pixel);
 
     const double I(boost::accumulate(data, 0.0));
     std::cout << "The total intensity of an output image is " << I << std::endl;
     std::cout << "The total intensity of PSFs is " << Itot << std::endl;
     std::cout << "The relative error is " << fabs(Itot - I) / Itot << std::endl;
+
+    {
+        gsl_rng_env_setup();
+        const gsl_rng_type * T = gsl_rng_default;
+        gsl_rng * r = gsl_rng_alloc(T);
+
+        for (unsigned int i(0); i < N_pixel; ++i)
+        {
+            for (unsigned int j(0); j < N_pixel; ++j)
+            {
+                const double photons(data[i * N_pixel + j]);
+                const double photoelectrons(
+                    cmos_detection_function(r, photons));
+                // data[i * N_pixel + j] = photoelectrons;
+                data[i * N_pixel + j] = static_cast<double>(
+                    convert_analog_to_digital(photoelectrons));
+            }
+        }
+        gsl_rng_free(r);
+    }
+
+    save_data("result.txt", data.data(), N_pixel * N_pixel);
 }

@@ -13,6 +13,7 @@ Nsq = len(data)
 N = numpy.sqrt(Nsq)
 print N
 print data.max(), data.sum()
+# plt.imshow(data.reshape((N, N)), cmap=plt.cm.gray, interpolation='none')
 plt.imshow(data.reshape((N, N)), interpolation='none')
 plt.colorbar()
 plt.show()
