@@ -14,9 +14,9 @@ using namespace microscope;
 int main()
 {
     const unsigned int N(2000 + 1);
-    const unsigned int M(200 + 1);
+    const unsigned int M(400 + 1);
     const double rmax(675);
-    const double zmax(60);
+    const double zmax(120);
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(16);
@@ -61,7 +61,7 @@ int main()
                 << (n != N - 1 || m != M - 1 ? "," : "") << std::endl;
         }
 
-        std::cout << m << std::endl;
+        std::cout << m + 1 << " / " << M << std::endl;
     }
     fout << "};" << std::endl;
     fout << std::endl;
