@@ -5,56 +5,65 @@
 
 #include <boost/array.hpp>
 #include <boost/range/numeric.hpp>
+#include <boost/format.hpp>
 
 #include "point_spreading_functions.hpp"
 #include "detection.hpp"
 using namespace microscope;
 
 
-void test_point_spreading_function_cutoff(double k, double N_A)
+std::string point_as_str(double p[3])
 {
-    const double alpha_inv(1.0 / (k * N_A));
-    const double psi_inv(2 * alpha_inv / N_A);
-
-    std::cout.setf(std::ios::scientific);
-    std::cout.precision(16);
-
-    std::cout << "alpha = " << 1.0 / alpha_inv << std::endl;
-    std::cout << "1 um corresponds to " << 1000 / alpha_inv << " / alpha" << std::endl;
-    const double z(0.0 * psi_inv * 0.5);
-    const double I0(int_psf_cylinder(0, 1000, z, k, N_A));
-    const double I1(int_psf_cylinder(0, 10000, z, k, N_A));
-    const double I2(int_psf_cylinder(0, 30000, z, k, N_A));
-    const double I3(int_psf_cylinder(0, 50000, z, k, N_A));
-    std::cout << "The integration over r < 1 um = " << I0 << std::endl;
-    std::cout << "An integration over r < 10 um = " << I1 << std::endl;
-    std::cout << "An integration over r < 30 um = " << I2 << std::endl;
-    std::cout << "An integration over r < 50 um = " << I3 << std::endl;
-    std::cout << "The relative error  1-50 um = " << (I3 - I0) / I3 << std::endl;
-    std::cout << "The relative error 10-50 um = " << (I3 - I1) / I3 << std::endl;
-    std::cout << "The relative error 30-50 um = " << (I3 - I2) / I3 << std::endl;
+    std::stringstream sout;
+    sout << std::showpos;
+    sout << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
+    return sout.str();
 }
 
-double int_psf_with_cutoff(
-    double p[3], double c[3], double k, double N_A,
-    double xmin, double xmax, double ymin, double ymax,
-    double cutoff)
-{
-    const double rsq_min(
-        std::min(gsl_pow_2(p[0] - c[0] - xmin), gsl_pow_2(p[0] - c[0] - xmax))
-        + std::min(gsl_pow_2(p[1] - c[1] - ymin), gsl_pow_2(p[1] - c[1] - ymax)));
-    if (rsq_min >= cutoff * cutoff)
-    {
-        return 0.0;
-    }
-    else
-    {
-        const double result(int_psf_tbl(xmin, xmax, ymin, ymax, p, c, k, N_A));
-        // const double result(int_psf_simpson(xmin, xmax, ymin, ymax, p, c, k, N_A));
-        // const double result(int_psf(xmin, xmax, ymin, ymax, p, c, k, N_A));
-        return result;
-    }
-}
+// void test_point_spreading_function_cutoff(double k, double N_A)
+// {
+//     const double alpha_inv(1.0 / (k * N_A));
+//     const double psi_inv(2 * alpha_inv / N_A);
+// 
+//     std::cout.setf(std::ios::scientific);
+//     std::cout.precision(16);
+// 
+//     std::cout << "alpha = " << 1.0 / alpha_inv << std::endl;
+//     std::cout << "1 um corresponds to " << 1000 / alpha_inv << " / alpha" << std::endl;
+//     const double z(0.0 * psi_inv * 0.5);
+//     const double I0(int_psf_cylinder(0, 1000, z, k, N_A));
+//     const double I1(int_psf_cylinder(0, 10000, z, k, N_A));
+//     const double I2(int_psf_cylinder(0, 30000, z, k, N_A));
+//     const double I3(int_psf_cylinder(0, 50000, z, k, N_A));
+//     std::cout << "The integration over r < 1 um = " << I0 << std::endl;
+//     std::cout << "An integration over r < 10 um = " << I1 << std::endl;
+//     std::cout << "An integration over r < 30 um = " << I2 << std::endl;
+//     std::cout << "An integration over r < 50 um = " << I3 << std::endl;
+//     std::cout << "The relative error  1-50 um = " << (I3 - I0) / I3 << std::endl;
+//     std::cout << "The relative error 10-50 um = " << (I3 - I1) / I3 << std::endl;
+//     std::cout << "The relative error 30-50 um = " << (I3 - I2) / I3 << std::endl;
+// }
+
+// double int_psf_with_cutoff(
+//     double p[3], double c[3], double k, double N_A,
+//     double xmin, double xmax, double ymin, double ymax,
+//     double cutoff)
+// {
+//     const double rsq_min(
+//         std::min(gsl_pow_2(p[0] - c[0] - xmin), gsl_pow_2(p[0] - c[0] - xmax))
+//         + std::min(gsl_pow_2(p[1] - c[1] - ymin), gsl_pow_2(p[1] - c[1] - ymax)));
+//     if (rsq_min >= cutoff * cutoff)
+//     {
+//         return 0.0;
+//     }
+//     else
+//     {
+//         const double result(int_psf_tbl(xmin, xmax, ymin, ymax, p, c, k, N_A));
+//         // const double result(int_psf_simpson(xmin, xmax, ymin, ymax, p, c, k, N_A));
+//         // const double result(int_psf(xmin, xmax, ymin, ymax, p, c, k, N_A));
+//         return result;
+//     }
+// }
 
 double emission(double z)
 {
@@ -75,20 +84,52 @@ void overlay_psf(
     double p[3], double I, double c[3], double k, double N_A,
     double cutoff)
 {
-    for (unsigned int i(0); i < N_pixel; ++i)
+    const double offset(N_pixel * pixel_length * -0.5);
+    const double x(p[0] - c[0] - offset);
+    const double y(p[1] - c[1] - offset);
+    const unsigned int imin(
+        static_cast<unsigned int>(
+            std::max(0.0, floor((x - cutoff) / pixel_length))));
+    const unsigned int imax(
+        std::min(N_pixel,
+            static_cast<unsigned int>(ceil((x + cutoff) / pixel_length))));
+    const unsigned int jmin(
+        static_cast<unsigned int>(
+            std::max(0.0, floor((y - cutoff) / pixel_length))));
+    const unsigned int jmax(
+        std::min(N_pixel,
+            static_cast<unsigned int>(ceil((y + cutoff) / pixel_length))));
+
+    for (unsigned int i(imin); i < imax; ++i)
     {
-        const double xmin(pixel_length * (i - N_pixel * 0.5));
+        const double xmin(pixel_length * i + offset);
         const double xmax(xmin + pixel_length);
-        for (unsigned int j(0); j < N_pixel; ++j)
+
+        for (unsigned int j(jmin); j < jmax; ++j)
         {
-            const double ymin(pixel_length * (j - N_pixel * 0.5));
+            const double ymin(pixel_length * j + offset);
             const double ymax(ymin + pixel_length);
 
-            const double value(int_psf_with_cutoff(
-                p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff));
+            const double value(int_psf_tbl(
+                xmin, xmax, ymin, ymax, p, c, k, N_A));
             data[i * N_pixel + j] += I * value;
         }
     }
+
+    // for (unsigned int i(0); i < N_pixel; ++i)
+    // {
+    //     const double xmin(pixel_length * (i - N_pixel * 0.5));
+    //     const double xmax(xmin + pixel_length);
+    //     for (unsigned int j(0); j < N_pixel; ++j)
+    //     {
+    //         const double ymin(pixel_length * (j - N_pixel * 0.5));
+    //         const double ymax(ymin + pixel_length);
+
+    //         const double value(int_psf_with_cutoff(
+    //             p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff));
+    //         data[i * N_pixel + j] += I * value;
+    //     }
+    // }
 }
 
 void generate_random_points(
@@ -131,12 +172,70 @@ void save_data(const char filename[], double data[], unsigned int data_size)
     fout.close();
 }
 
-std::string point_as_str(double p[3])
+void read_input(const char filename[], double points[][3], double intensity[], unsigned int data_size)
 {
-    std::stringstream sout;
-    sout << std::showpos;
-    sout << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
-    return sout.str();
+    std::ifstream fin(filename);
+    std::string buf;
+
+    std::getline(fin, buf); // Ignore a header line
+
+    unsigned int i(0);
+    while (fin && std::getline(fin, buf) && i < data_size)
+    {
+        std::string token;
+        std::istringstream stream(buf);
+        std::stringstream ss;
+        double val;
+        unsigned int sid;
+
+        double x, y, z;
+
+        {
+            std::getline(stream, token, ',');
+            ss << token;
+            ss >> val;
+            x = val;
+            ss.str("");
+            ss.clear(std::stringstream::goodbit);
+        }
+        {
+            std::getline(stream, token, ',');
+            ss << token;
+            ss >> val;
+            y = val;
+            ss.str("");
+            ss.clear(std::stringstream::goodbit);
+        }
+        {
+            std::getline(stream, token, ',');
+            ss << token;
+            ss >> val;
+            z = val;
+            ss.str("");
+            ss.clear(std::stringstream::goodbit);
+        }
+        {
+            std::getline(stream, token, ',');
+            std::getline(stream, token, ',');
+            ss << token;
+            ss >> sid;
+            ss.str("");
+            ss.clear(std::stringstream::goodbit);
+        }
+
+        if (sid > 1)
+        {
+            // continue;
+            break;
+        }
+
+        points[i][0] = (x - 2) * 1000;
+        points[i][1] = (y - 2) * 1000;
+        points[i][2] = z * 1000;
+        intensity[i] = emission(points[i][2]);
+        // std::cout << point_as_str(points[i]) << std::endl;
+        i++;
+    };
 }
 
 int main()
@@ -153,17 +252,20 @@ int main()
     const double L_2(L * 0.5);
     double focal_point[] = {0, 0, 0};
 
-    const unsigned int N_point(16200);
+    // const unsigned int N_point(16200);
+    const unsigned int N_point(200);
     double points[N_point][3];
     double intensity[N_point];
-    generate_random_points(points, intensity, N_point, L);
 
     boost::array<double, N_pixel * N_pixel> data;
     data.fill(0.0);
 
     // const double cutoff(20000);
-    const double cutoff(1000);
+    const double cutoff(2000);
     double Itot(0.0);
+
+    generate_random_points(points, intensity, N_point, L);
+
     for (unsigned int i(0); i < N_point; ++i)
     {
         std::cout << "[" << i << "] = " << point_as_str(points[i]) << std::endl;
@@ -172,6 +274,26 @@ int main()
             points[i], intensity[i], focal_point, k, N_A, cutoff);
         Itot += intensity[i];
     }
+
+    // const unsigned int frames(100);
+    // for (unsigned int cnt(0); cnt < frames; ++cnt)
+    // {
+    //     // generate_random_points(points, intensity, N_point, L);
+    //     read_input(
+    //         (boost::format("sample_data/test%03d.csv")
+    //             % (cnt * (100 / frames))).str().c_str(),
+    //         points, intensity, N_point);
+
+    //     for (unsigned int i(0); i < N_point; ++i)
+    //     {
+    //         // std::cout << "[" << i << "] = " << point_as_str(points[i]) << std::endl;
+
+    //         const double I(intensity[i] / frames);
+    //         overlay_psf(data.data(), N_pixel, pixel_length,
+    //             points[i], I, focal_point, k, N_A, cutoff);
+    //         Itot += I;
+    //     }
+    // }
 
     const double I(boost::accumulate(data, 0.0));
     std::cout << "The total intensity of an output image is " << I << std::endl;
