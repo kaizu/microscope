@@ -146,7 +146,6 @@ void generate_random_points(
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
         points[i][2] = gsl_rng_uniform(r) * 3000;
-        // points[i][2] = 0.0;
         intensity[i] = emission(points[i][2]);
     }
 
@@ -174,7 +173,9 @@ void save_data(const char filename[], double data[], unsigned int data_size)
     fout.close();
 }
 
-void read_input(const char filename[], double points[][3], double intensity[], unsigned int data_size)
+void read_input(
+    const char filename[], double points[][3], double intensity[], unsigned int data_size,
+    double shift[3], double scale)
 {
     std::ifstream fin(filename);
     std::string buf;
@@ -230,10 +231,9 @@ void read_input(const char filename[], double points[][3], double intensity[], u
         //     continue;
         // }
 
-        points[i][0] = (x - 15) * 1000;
-        points[i][1] = (y - 15) * 1000;
-        points[i][2] = fabs((z - 1.5) * 1000);
-        // points[i][2] = z * 1000;
+        points[i][0] = (x - shift[0]) * scale;
+        points[i][1] = (y - shift[1]) * scale;
+        points[i][2] = fabs(z - shift[2]) * scale;
         intensity[i] = emission(points[i][2]);
         // std::cout << point_as_str(points[i]) << std::endl;
         i++;
@@ -283,6 +283,9 @@ int main(int argc, char** argv)
     }
     else
     {
+        double shift[3] = {15, 15, 1.5};
+        double scale = 1000.0;
+
         const unsigned int frames(argc - 1);
         for (unsigned int cnt(0); cnt < frames; ++cnt)
         {
@@ -292,7 +295,7 @@ int main(int argc, char** argv)
             std::string const filename(argv[cnt + 1]);
 
             // generate_random_points(points, intensity, N_point, L);
-            read_input(filename.c_str(), points, intensity, N_point);
+            read_input(filename.c_str(), points, intensity, N_point, shift, scale);
 
             for (unsigned int i(0); i < N_point; ++i)
             {
