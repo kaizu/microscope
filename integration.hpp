@@ -2,6 +2,7 @@
 #define __MICROSCOPE__INTEGRATION
 
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_roots.h>
 
 #ifdef CUBATURE
 #include "cubature.h"
@@ -9,7 +10,6 @@
 
 namespace microscope
 {
-
 
 double integrate1d_simpson(
     double (* function)(double, void*), void * params,
@@ -165,6 +165,46 @@ inline double integrate2d(
 {
     return integrate2d_gsl_qags(function, params, xmin, xmax, ymin, ymax);
     // return integrate2d_hcubature(function, params, xmin, xmax, ymin, ymax);
+}
+
+double find_root(double (* function)(double, void*), void * params,
+                 gsl_root_fsolver* solver, double low, double high,
+                 double tol_abs, double tol_rel)
+{
+    gsl_function F;
+    F.function = function;
+    F.params = params;
+
+    double l(low), h(high);
+    gsl_root_fsolver_set(solver, const_cast<gsl_function*>(&F), l, h);
+
+    const unsigned int itermax(100);
+    unsigned int i(0);
+    for (; ; )
+    {
+        gsl_root_fsolver_iterate(solver);
+        l = gsl_root_fsolver_x_lower(solver);
+        h = gsl_root_fsolver_x_upper(solver);
+
+        const int status(gsl_root_test_interval(l, h, tol_abs, tol_rel));
+        if (status == GSL_CONTINUE)
+        {
+            if (i >= itermax)
+            {
+                gsl_root_fsolver_free(solver);
+                throw std::runtime_error("failed to converge");
+            }
+        }
+        else
+        {
+            break;
+        }
+
+        ++i;
+    }
+
+    const double root(gsl_root_fsolver_root(solver));
+    return root;
 }
 
 } // microscope

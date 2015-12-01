@@ -150,6 +150,7 @@ struct PSF_cylinder_params
     double z;
     double k;
     double N_A;
+    double v;
 };
 
 double PSF_cylinder(double r, void *params)
@@ -159,11 +160,28 @@ double PSF_cylinder(double r, void *params)
 }
 
 double int_psf_cylinder(
+    double rmin, double rmax, PSF_cylinder_params * params)
+{
+    const double C(born_wolf_psf_normalizing_constant(params->z, params->k, params->N_A));
+    return (2 * M_PI) * C * integrate1d(&PSF_cylinder, params, rmin, rmax);
+}
+
+double int_psf_cylinder(double r, PSF_cylinder_params * params)
+{
+    const double C(born_wolf_psf_normalizing_constant(params->z, params->k, params->N_A));
+    return (2 * M_PI) * C * integrate1d(&PSF_cylinder, params, 0.0, r) - params->v;
+}
+
+double int_psf_cylinder(double r, void * params)
+{
+    return int_psf_cylinder(r, static_cast<PSF_cylinder_params*>(params));
+}
+
+double int_psf_cylinder(
     double rmin, double rmax, double z, double k, double N_A)
 {
     struct PSF_cylinder_params params = {z, k, N_A};
-    const double C(born_wolf_psf_normalizing_constant(z, k, N_A));
-    return (2 * M_PI) * C * integrate1d(&PSF_cylinder, &params, rmin, rmax);
+    return int_psf_cylinder(rmin, rmax, &params);
 }
 
 } // microscope
