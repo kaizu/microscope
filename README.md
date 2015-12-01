@@ -2,6 +2,13 @@ microscope
 ==========
 
 ```
+$ cmake .
+$ make
+$ ./microscope
+$ python plot.py
+```
+
+```
 $ g++ generate_table.cpp -lgsl -lcblas
 $ ./a.out
 $ g++ main.cpp -lgsl -lcblas

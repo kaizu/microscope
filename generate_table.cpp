@@ -11,8 +11,14 @@
 using namespace microscope;
 
 
-int main()
+int main(int argc, char** argv)
 {
+    std::string filename("born_wolf_psf_table.hpp");
+    if (argc > 1)
+    {
+        filename = std::string(argv[1]);
+    }
+
     const unsigned int N(2000 + 1);
     const unsigned int M(400 + 1);
     const double rmax(675);
@@ -25,7 +31,7 @@ int main()
     const double dz(zmax / M);
 
     std::ofstream fout;
-    fout.open("born_wolf_psf_table.hpp");
+    fout.open(filename.c_str());
     fout.setf(std::ios::scientific);
     fout.precision(16);
 
