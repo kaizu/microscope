@@ -19,3 +19,5 @@ $ python plot.py
 ```
 $ g++ -Icubature-1.0.2 -DCUBATURE main.cpp cubature-1.0.2/hcubature.c -lgsl -lcblas
 ```
+
+![doc/result.txt.png](doc/result.txt.png)
