@@ -216,6 +216,7 @@ double cmos_detection_function(const gsl_rng* rng, const double photons)
     f = gsl_ran_discrete_preproc(194, NDist_F40_table);
     size_t k = gsl_ran_discrete(rng, f);
     const double noise(0.6 + k * 0.1);
+    gsl_ran_discrete_free(f);
 
     const double photoelectrons(
         static_cast<double>(signal) + noise);
