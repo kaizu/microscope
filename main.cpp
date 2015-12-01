@@ -135,6 +135,8 @@ void overlay_psf(
 void generate_random_points(
     double points[][3], double intensity[], const unsigned int N_point, const double L)
 {
+    assert(N_point >= 200);
+
     gsl_rng_env_setup();
     const gsl_rng_type * T = gsl_rng_default;
     gsl_rng * r = gsl_rng_alloc(T);
@@ -223,22 +225,22 @@ void read_input(const char filename[], double points[][3], double intensity[], u
             ss.clear(std::stringstream::goodbit);
         }
 
-        if (sid > 1)
-        {
-            // continue;
-            break;
-        }
+        // if (sid != 0)
+        // {
+        //     continue;
+        // }
 
-        points[i][0] = (x - 2) * 1000;
-        points[i][1] = (y - 2) * 1000;
-        points[i][2] = z * 1000;
+        points[i][0] = (x - 15) * 1000;
+        points[i][1] = (y - 15) * 1000;
+        points[i][2] = fabs((z - 1.5) * 1000);
+        // points[i][2] = z * 1000;
         intensity[i] = emission(points[i][2]);
         // std::cout << point_as_str(points[i]) << std::endl;
         i++;
     };
 }
 
-int main()
+int main(int argc, char** argv)
 {
     const double lambda(508); // nm
     const double N_A(1.4);
@@ -252,11 +254,6 @@ int main()
     const double L_2(L * 0.5);
     double focal_point[] = {0, 0, 0};
 
-    // const unsigned int N_point(16200);
-    const unsigned int N_point(200);
-    double points[N_point][3];
-    double intensity[N_point];
-
     boost::array<double, N_pixel * N_pixel> data;
     data.fill(0.0);
 
@@ -264,36 +261,51 @@ int main()
     const double cutoff(2000);
     double Itot(0.0);
 
-    generate_random_points(points, intensity, N_point, L);
+    // const unsigned int N_point(17200);
+    // const unsigned int N_point(1000);
+    const unsigned int N_point(2620);
+    double points[N_point][3];
+    double intensity[N_point];
 
-    for (unsigned int i(0); i < N_point; ++i)
+    if (argc == 1)
     {
-        std::cout << "[" << i << "] = " << point_as_str(points[i]) << std::endl;
+        generate_random_points(points, intensity, N_point, L);
 
-        overlay_psf(data.data(), N_pixel, pixel_length,
-            points[i], intensity[i], focal_point, k, N_A, cutoff);
-        Itot += intensity[i];
+        for (unsigned int i(0); i < N_point; ++i)
+        {
+            std::cout << "[" << i << "/"
+                << N_point << "] = " << point_as_str(points[i]) << std::endl;
+
+            overlay_psf(data.data(), N_pixel, pixel_length,
+                points[i], intensity[i], focal_point, k, N_A, cutoff);
+            Itot += intensity[i];
+        }
     }
+    else
+    {
+        const unsigned int frames(argc - 1);
+        for (unsigned int cnt(0); cnt < frames; ++cnt)
+        {
+            // std::string const filename(
+            //     (boost::format("sample_data3/test%03d.csv")
+            //         % (cnt * (101 / frames))).str());
+            std::string const filename(argv[cnt + 1]);
 
-    // const unsigned int frames(100);
-    // for (unsigned int cnt(0); cnt < frames; ++cnt)
-    // {
-    //     // generate_random_points(points, intensity, N_point, L);
-    //     read_input(
-    //         (boost::format("sample_data/test%03d.csv")
-    //             % (cnt * (100 / frames))).str().c_str(),
-    //         points, intensity, N_point);
+            // generate_random_points(points, intensity, N_point, L);
+            read_input(filename.c_str(), points, intensity, N_point);
 
-    //     for (unsigned int i(0); i < N_point; ++i)
-    //     {
-    //         // std::cout << "[" << i << "] = " << point_as_str(points[i]) << std::endl;
+            for (unsigned int i(0); i < N_point; ++i)
+            {
+                std::cout << "[" << cnt << ":" << i << "/"
+                    << N_point << "] = " << point_as_str(points[i]) << std::endl;
 
-    //         const double I(intensity[i] / frames);
-    //         overlay_psf(data.data(), N_pixel, pixel_length,
-    //             points[i], I, focal_point, k, N_A, cutoff);
-    //         Itot += I;
-    //     }
-    // }
+                const double I(intensity[i] / frames);
+                overlay_psf(data.data(), N_pixel, pixel_length,
+                    points[i], I, focal_point, k, N_A, cutoff);
+                Itot += I;
+            }
+        }
+    }
 
     const double I(boost::accumulate(data, 0.0));
     std::cout << "The total intensity of an output image is " << I << std::endl;
@@ -320,5 +332,7 @@ int main()
         gsl_rng_free(r);
     }
 
+    // save_data((boost::format("result%03d.txt") % (frames)).str().c_str(),
+    //           data.data(), N_pixel * N_pixel);
     save_data("result.txt", data.data(), N_pixel * N_pixel);
 }

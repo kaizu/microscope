@@ -4,7 +4,7 @@ microscope
 ```
 $ cmake .
 $ make
-$ ./microscope
+$ ./main
 $ python plot.py
 ```
 

@@ -20,51 +20,6 @@ std::string point_as_str(double p[3])
     return sout.str();
 }
 
-// void test_point_spreading_function_cutoff(double k, double N_A)
-// {
-//     const double alpha_inv(1.0 / (k * N_A));
-//     const double psi_inv(2 * alpha_inv / N_A);
-// 
-//     std::cout.setf(std::ios::scientific);
-//     std::cout.precision(16);
-// 
-//     std::cout << "alpha = " << 1.0 / alpha_inv << std::endl;
-//     std::cout << "1 um corresponds to " << 1000 / alpha_inv << " / alpha" << std::endl;
-//     const double z(0.0 * psi_inv * 0.5);
-//     const double I0(int_psf_cylinder(0, 1000, z, k, N_A));
-//     const double I1(int_psf_cylinder(0, 10000, z, k, N_A));
-//     const double I2(int_psf_cylinder(0, 30000, z, k, N_A));
-//     const double I3(int_psf_cylinder(0, 50000, z, k, N_A));
-//     std::cout << "The integration over r < 1 um = " << I0 << std::endl;
-//     std::cout << "An integration over r < 10 um = " << I1 << std::endl;
-//     std::cout << "An integration over r < 30 um = " << I2 << std::endl;
-//     std::cout << "An integration over r < 50 um = " << I3 << std::endl;
-//     std::cout << "The relative error  1-50 um = " << (I3 - I0) / I3 << std::endl;
-//     std::cout << "The relative error 10-50 um = " << (I3 - I1) / I3 << std::endl;
-//     std::cout << "The relative error 30-50 um = " << (I3 - I2) / I3 << std::endl;
-// }
-
-// double int_psf_with_cutoff(
-//     double p[3], double c[3], double k, double N_A,
-//     double xmin, double xmax, double ymin, double ymax,
-//     double cutoff)
-// {
-//     const double rsq_min(
-//         std::min(gsl_pow_2(p[0] - c[0] - xmin), gsl_pow_2(p[0] - c[0] - xmax))
-//         + std::min(gsl_pow_2(p[1] - c[1] - ymin), gsl_pow_2(p[1] - c[1] - ymax)));
-//     if (rsq_min >= cutoff * cutoff)
-//     {
-//         return 0.0;
-//     }
-//     else
-//     {
-//         const double result(int_psf_tbl(xmin, xmax, ymin, ymax, p, c, k, N_A));
-//         // const double result(int_psf_simpson(xmin, xmax, ymin, ymax, p, c, k, N_A));
-//         // const double result(int_psf(xmin, xmax, ymin, ymax, p, c, k, N_A));
-//         return result;
-//     }
-// }
-
 double emission(double z)
 {
     const double ATsq(1.16737230263e+25);
@@ -172,7 +127,8 @@ void save_data(const char filename[], double data[], unsigned int data_size)
     fout.close();
 }
 
-void read_input(const char filename[], double points[][3], double intensity[], unsigned int data_size)
+void read_input(const char filename[], double points[][3], double intensity[],
+                unsigned int data_size)
 {
     std::ifstream fin(filename);
     std::string buf;
@@ -244,8 +200,6 @@ int main()
     const double N_A(1.4);
     const double k(2 * M_PI / lambda);
 
-    // test_point_spreading_function_cutoff(k, N_A);
-
     const unsigned int N_pixel(600);
     const double pixel_length(6500 / 100);
     const double L(pixel_length * N_pixel);
@@ -276,53 +230,80 @@ int main()
     //     Itot += intensity[i];
     // }
 
-    const unsigned int frames(101);
+    gsl_rng_env_setup();
+    const gsl_rng_type * T = gsl_rng_default;
+    gsl_rng * r = gsl_rng_alloc(T);
+
+    const gsl_root_fsolver_type* solverType(gsl_root_fsolver_brent);
+    gsl_root_fsolver* solver(gsl_root_fsolver_alloc(solverType));
+
+    struct PSF_cylinder_params params = {1000.0, k, N_A, 0.0};
+    const double vmax = int_psf_cylinder(4000, &params);
+    double rv(0.0);
+    for (unsigned int i = 0; i < 101; ++i)
+    {
+        params.v = vmax * i / 100;
+        rv = find_root(&int_psf_cylinder, &params, solver, rv, 4000, 1e-18, 1e-12);
+        std::cout << i << "\t" << rv << "\t"
+            << int_psf_cylinder(rv, &params) + params.v << std::endl;
+    }
+
+    gsl_root_fsolver_free(solver);
+
+    // // const unsigned int frames(101);
     // const unsigned int frames(1);
-    for (unsigned int cnt(0); cnt < frames; ++cnt)
-    {
-        // generate_random_points(points, intensity, N_point, L);
-        read_input(
-            (boost::format("sample_data3/test%03d.csv")
-                % (cnt * (101 / frames))).str().c_str(),
-            points, intensity, N_point);
+    // for (unsigned int cnt(0); cnt < frames; ++cnt)
+    // {
+    //     // generate_random_points(points, intensity, N_point, L);
+    //     read_input(
+    //         (boost::format("sample_data3/test%03d.csv")
+    //             % (cnt * (101 / frames))).str().c_str(),
+    //         points, intensity, N_point);
 
-        for (unsigned int i(0); i < N_point; ++i)
-        {
-            std::cout << "[" << cnt << ":" << i << "/"
-                << N_point << "] = " << point_as_str(points[i]) << std::endl;
+    //     for (unsigned int i(0); i < N_point; ++i)
+    //     {
+    //         std::cout << "[" << cnt << ":" << i << "/"
+    //             << N_point << "] = " << point_as_str(points[i]) << std::endl;
 
-            const double I(intensity[i] / frames);
-            overlay_psf(data.data(), N_pixel, pixel_length,
-                points[i], I, focal_point, k, N_A, cutoff);
-            Itot += I;
-        }
-    }
+    //         const double I(intensity[i] / frames);
+    //         // overlay_psf(data.data(), N_pixel, pixel_length,
+    //         //     points[i], I, focal_point, k, N_A, cutoff);
 
-    const double I(boost::accumulate(data, 0.0));
-    std::cout << "The total intensity of an output image is " << I << std::endl;
-    std::cout << "The total intensity of PSFs is " << Itot << std::endl;
-    std::cout << "The relative error is " << fabs(Itot - I) / Itot << std::endl;
+    //         const double QE(0.73);
+    //         unsigned int signal(gsl_ran_poisson(r, QE * I));
+    //         std::cout << signal << std::endl;
 
-    {
-        gsl_rng_env_setup();
-        const gsl_rng_type * T = gsl_rng_default;
-        gsl_rng * r = gsl_rng_alloc(T);
+    //         Itot += I;
+    //     }
+    // }
 
-        for (unsigned int i(0); i < N_pixel; ++i)
-        {
-            for (unsigned int j(0); j < N_pixel; ++j)
-            {
-                const double photons(data[i * N_pixel + j]);
-                const double photoelectrons(
-                    cmos_detection_function(r, photons));
-                // data[i * N_pixel + j] = photoelectrons;
-                data[i * N_pixel + j] = static_cast<double>(
-                    convert_analog_to_digital(photoelectrons));
-            }
-        }
-        gsl_rng_free(r);
-    }
+    gsl_rng_free(r);
 
-    save_data((boost::format("result%03d.txt") % (frames)).str().c_str(),
-              data.data(), N_pixel * N_pixel);
+    // const double I(boost::accumulate(data, 0.0));
+    // std::cout << "The total intensity of an output image is " << I << std::endl;
+    // std::cout << "The total intensity of PSFs is " << Itot << std::endl;
+    // std::cout << "The relative error is " << fabs(Itot - I) / Itot << std::endl;
+
+    // {
+    //     gsl_rng_env_setup();
+    //     const gsl_rng_type * T = gsl_rng_default;
+    //     gsl_rng * r = gsl_rng_alloc(T);
+
+    //     for (unsigned int i(0); i < N_pixel; ++i)
+    //     {
+    //         for (unsigned int j(0); j < N_pixel; ++j)
+    //         {
+    //             const double photons(data[i * N_pixel + j]);
+    //             const double photoelectrons(
+    //                 cmos_detection_function(r, photons));
+    //             // data[i * N_pixel + j] = photoelectrons;
+    //             data[i * N_pixel + j] = static_cast<double>(
+    //                 convert_analog_to_digital(photoelectrons));
+    //         }
+    //     }
+    //     gsl_rng_free(r);
+    // }
+
+    // save_data((boost::format("result%03d.txt") % (frames)).str().c_str(),
+    //           data.data(), N_pixel * N_pixel);
 }

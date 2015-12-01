@@ -14,3 +14,11 @@ add_custom_target(psf_tables ALL DEPENDS ${PROJECT_BINARY_DIR}/born_wolf_psf_tab
 add_executable(microscope main.cpp)
 target_link_libraries(microscope ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
 add_dependencies(microscope psf_tables)
+
+add_executable(main main.cpp)
+target_link_libraries(main ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
+add_dependencies(main psf_tables)
+
+add_executable(test test.cpp)
+target_link_libraries(test ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
+add_dependencies(test psf_tables)
