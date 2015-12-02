@@ -110,6 +110,8 @@ void overlay_psf(
             const double ymin(pixel_length * j + offset);
             const double ymax(ymin + pixel_length);
 
+            // const double value(int_psf_gaussian(
+            //     xmin, xmax, ymin, ymax, p, c, k, N_A));
             const double value(int_psf_tbl(
                 xmin, xmax, ymin, ymax, p, c, k, N_A));
             data[i * N_pixel + j] += I * value;
@@ -264,11 +266,10 @@ int main(int argc, char** argv)
     // const unsigned int N_point(17200);
     // const unsigned int N_point(1000);
     const unsigned int N_point(2620);
-    double points[N_point][3];
-    double intensity[N_point];
-
     if (argc == 1)
     {
+        double points[N_point][3];
+        double intensity[N_point];
         generate_random_points(points, intensity, N_point, L);
 
         for (unsigned int i(0); i < N_point; ++i)
@@ -294,7 +295,8 @@ int main(int argc, char** argv)
             //         % (cnt * (101 / frames))).str());
             std::string const filename(argv[cnt + 1]);
 
-            // generate_random_points(points, intensity, N_point, L);
+            double points[N_point][3];
+            double intensity[N_point];
             read_input(filename.c_str(), points, intensity, N_point, shift, scale);
 
             for (unsigned int i(0); i < N_point; ++i)

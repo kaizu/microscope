@@ -2,6 +2,7 @@
 #define __MICROSCOPE__POINT_SPREADING_FUNCTIONS
 
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_sf_erf.h>
 
 #include "integration.hpp"
 
@@ -182,6 +183,23 @@ double int_psf_cylinder(
 {
     struct PSF_cylinder_params params = {z, k, N_A};
     return int_psf_cylinder(rmin, rmax, &params);
+}
+
+double int_psf_gaussian(
+    double xmin, double xmax, double ymin, double ymax,
+    double p[3], double c[3], double k, double N_A)
+{
+    // const double sigma(sqrt(2.0) / (k * N_A)); //  The variance of Gaussian changes linearly with the axial axis, p[2].
+    const double sigma(
+        1.0 / (sqrt(2 * born_wolf_psf_tbl(0.0, p[2] - c[2], k, N_A)) * k * N_A));
+    const double sigma_inv(1.0 / (sigma * sqrt(2.0)));
+    const double term1(
+        gsl_sf_erf((xmax - p[0] + c[0]) * sigma_inv)
+        - gsl_sf_erf((xmin - p[0] + c[0]) * sigma_inv));
+    const double term2(
+        gsl_sf_erf((ymax - p[1] + c[1]) * sigma_inv)
+        - gsl_sf_erf((ymin - p[1] + c[1]) * sigma_inv));
+    return 0.25 * term1 * term2;
 }
 
 } // microscope

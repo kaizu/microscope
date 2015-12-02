@@ -219,6 +219,55 @@ int main()
     const double cutoff(2000);
     double Itot(0.0);
 
+    if (false)
+    {
+        for (unsigned int i = 0; i < 1001; ++i)
+        {
+            double const z = static_cast<double>(i) / (200 * k * N_A);
+            double const val = born_wolf_psf(0.0, z, k, N_A);
+            std::cout << z << "\t" << 1.0 / gsl_pow_2(4 * val) << std::endl;
+            // std::cout << z << "\t" << 0.25 / (val * val) / (k * N_A) << std::endl;
+        }
+    }
+
+    // if (false)
+    {
+        double const z = 4.0 / (k * N_A);
+        double const C = born_wolf_psf_normalizing_constant(z, k, N_A);
+        for (unsigned int i = 0; i < 2001; ++i)
+        {
+            double const r = (static_cast<double>(i) - 1000) / (150 * k * N_A);
+            std::cout << r
+                << "\t" << C * born_wolf_psf(r, 0.0, k, N_A)
+                << "\t" << C * born_wolf_psf(r, z, k, N_A) << std::endl;
+        }
+    }
+
+    if (false)
+    {
+        gsl_rng_env_setup();
+        const gsl_rng_type * T = gsl_rng_default;
+        gsl_rng * r = gsl_rng_alloc(T);
+
+        const gsl_root_fsolver_type* solverType(gsl_root_fsolver_brent);
+        gsl_root_fsolver* solver(gsl_root_fsolver_alloc(solverType));
+
+        struct PSF_cylinder_params params = {1000.0, k, N_A, 0.0};
+        const double vmax = int_psf_cylinder(4000, &params);
+        double rv(0.0);
+        for (unsigned int i = 0; i < 101; ++i)
+        {
+            params.v = vmax * i / 100;
+            rv = find_root(&int_psf_cylinder, &params, solver, rv, 4000, 1e-18, 1e-12);
+            std::cout << i << "\t" << rv << "\t"
+                << int_psf_cylinder(rv, &params) + params.v << std::endl;
+        }
+
+        gsl_root_fsolver_free(solver);
+        gsl_rng_free(r);
+
+    }
+
     // generate_random_points(points, intensity, N_point, L);
 
     // for (unsigned int i(0); i < N_point; ++i)
@@ -229,26 +278,6 @@ int main()
     //         points[i], intensity[i], focal_point, k, N_A, cutoff);
     //     Itot += intensity[i];
     // }
-
-    gsl_rng_env_setup();
-    const gsl_rng_type * T = gsl_rng_default;
-    gsl_rng * r = gsl_rng_alloc(T);
-
-    const gsl_root_fsolver_type* solverType(gsl_root_fsolver_brent);
-    gsl_root_fsolver* solver(gsl_root_fsolver_alloc(solverType));
-
-    struct PSF_cylinder_params params = {1000.0, k, N_A, 0.0};
-    const double vmax = int_psf_cylinder(4000, &params);
-    double rv(0.0);
-    for (unsigned int i = 0; i < 101; ++i)
-    {
-        params.v = vmax * i / 100;
-        rv = find_root(&int_psf_cylinder, &params, solver, rv, 4000, 1e-18, 1e-12);
-        std::cout << i << "\t" << rv << "\t"
-            << int_psf_cylinder(rv, &params) + params.v << std::endl;
-    }
-
-    gsl_root_fsolver_free(solver);
 
     // // const unsigned int frames(101);
     // const unsigned int frames(1);
@@ -276,8 +305,6 @@ int main()
     //         Itot += I;
     //     }
     // }
-
-    gsl_rng_free(r);
 
     // const double I(boost::accumulate(data, 0.0));
     // std::cout << "The total intensity of an output image is " << I << std::endl;
