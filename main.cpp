@@ -20,7 +20,7 @@ std::string point_as_str(double p[3])
     return sout.str();
 }
 
-// void test_point_spreading_function_cutoff(double k, double N_A)
+// void test_point_spreading_function_cutoff(double const k, double const N_A)
 // {
 //     const double alpha_inv(1.0 / (k * N_A));
 //     const double psi_inv(2 * alpha_inv / N_A);
@@ -45,9 +45,9 @@ std::string point_as_str(double p[3])
 // }
 
 // double int_psf_with_cutoff(
-//     double p[3], double c[3], double k, double N_A,
-//     double xmin, double xmax, double ymin, double ymax,
-//     double cutoff)
+//     double p[3], double c[3], double const k, double const N_A,
+//     double const xmin, double const xmax, double const ymin, double const ymax,
+//     double const cutoff)
 // {
 //     const double rsq_min(
 //         std::min(gsl_pow_2(p[0] - c[0] - xmin), gsl_pow_2(p[0] - c[0] - xmax))
@@ -65,7 +65,7 @@ std::string point_as_str(double p[3])
 //     }
 // }
 
-double emission(double z)
+double emission(double const z)
 {
     const double ATsq(1.16737230263e+25);
     const double d(1.01896194663e+03); // nm
@@ -80,9 +80,9 @@ double emission(double z)
 }
 
 void overlay_psf(
-    double data[], unsigned int N_pixel, double pixel_length,
-    double p[3], double I, double c[3], double k, double N_A,
-    double cutoff)
+    double data[], unsigned int const N_pixel, double const pixel_length,
+    double p[3], double const I, double c[3], double const k, double const N_A,
+    double const cutoff)
 {
     const double offset(N_pixel * pixel_length * -0.5);
     const double x(p[0] - c[0] - offset);
@@ -135,7 +135,7 @@ void overlay_psf(
 }
 
 void generate_random_points(
-    double points[][3], double intensity[], const unsigned int N_point, const double L)
+    double points[][3], double intensity[], unsigned int const N_point, double const L)
 {
     assert(N_point >= 200);
 
@@ -162,7 +162,7 @@ void generate_random_points(
     gsl_rng_free(r);
 }
 
-void save_data(const char filename[], double data[], unsigned int data_size)
+void save_data(char const filename[], double data[], unsigned int const data_size)
 {
     std::ofstream fout;
     fout.open(filename);
@@ -176,8 +176,8 @@ void save_data(const char filename[], double data[], unsigned int data_size)
 }
 
 void read_input(
-    const char filename[], double points[][3], double intensity[], unsigned int data_size,
-    double shift[3], double scale)
+    char const filename[], double points[][3], double intensity[], unsigned int const data_size,
+    double shift[3], double const scale)
 {
     std::ifstream fin(filename);
     std::string buf;
@@ -355,7 +355,7 @@ int main(int argc, char** argv)
                 const double photons(data[i * N_pixel + j]);
                 const double photoelectrons(
                     cmos_detection_function(r, photons));
-                // data[i * N_pixel + j] = photoelectrons;
+                data[i * N_pixel + j] = photoelectrons;
                 data[i * N_pixel + j] = static_cast<double>(
                     convert_analog_to_digital(photoelectrons));
             }

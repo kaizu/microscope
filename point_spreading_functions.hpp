@@ -85,7 +85,7 @@ struct PSF_params
     double N_A;
 };
 
-double PSF(double x, double y, void *params)
+double PSF(double const x, double const y, void *params)
 {
     struct PSF_params *p = (struct PSF_params *) params;
 
@@ -96,8 +96,8 @@ double PSF(double x, double y, void *params)
 }
 
 double int_psf(
-    double xmin, double xmax, double ymin, double ymax,
-    double p[3], double c[3], double k, double N_A)
+    double const xmin, double const xmax, double const ymin, double const ymax,
+    double p[3], double c[3], double const k, double const N_A)
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
@@ -105,7 +105,7 @@ double int_psf(
     return C * integrate2d(&PSF, &params, xmin, xmax, ymin, ymax);
 }
 
-double PSF_simpson(double x, double y, void *params)
+double PSF_simpson(double const x, double const y, void *params)
 {
     struct PSF_params *p = (struct PSF_params *) params;
 
@@ -116,8 +116,8 @@ double PSF_simpson(double x, double y, void *params)
 }
 
 double int_psf_simpson(
-    double xmin, double xmax, double ymin, double ymax,
-    double p[3], double c[3], double k, double N_A)
+    double const xmin, double const xmax, double const ymin, double const ymax,
+    double p[3], double c[3], double const k, double const N_A)
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
@@ -126,7 +126,7 @@ double int_psf_simpson(
     // return C * integrate2d_simpson(&PSF_simpson, &params, xmin, xmax, ymin, ymax);
 }
 
-double PSF_tbl(double x, double y, void *params)
+double PSF_tbl(double const x, double const y, void *params)
 {
     struct PSF_params *p = (struct PSF_params *) params;
 
@@ -137,8 +137,8 @@ double PSF_tbl(double x, double y, void *params)
 }
 
 double int_psf_tbl(
-    double xmin, double xmax, double ymin, double ymax,
-    double p[3], double c[3], double k, double N_A)
+    double const xmin, double const xmax, double const ymin, double const ymax,
+    double p[3], double c[3], double const k, double const N_A)
 {
     struct PSF_params params = {
         {p[0] - c[0], p[1] - c[1], p[2] - c[2]}, k, N_A};
@@ -154,40 +154,40 @@ struct PSF_cylinder_params
     double v;
 };
 
-double PSF_cylinder(double r, void *params)
+double PSF_cylinder(double const r, void *params)
 {
     struct PSF_cylinder_params *p = (struct PSF_cylinder_params *) params;
     return r * born_wolf_psf(r, p->z, p->k, p->N_A);
 }
 
 double int_psf_cylinder(
-    double rmin, double rmax, PSF_cylinder_params * params)
+    double const rmin, double const rmax, PSF_cylinder_params * params)
 {
     const double C(born_wolf_psf_normalizing_constant(params->z, params->k, params->N_A));
     return (2 * M_PI) * C * integrate1d(&PSF_cylinder, params, rmin, rmax);
 }
 
-double int_psf_cylinder(double r, PSF_cylinder_params * params)
+double int_psf_cylinder(double const r, PSF_cylinder_params * params)
 {
     const double C(born_wolf_psf_normalizing_constant(params->z, params->k, params->N_A));
     return (2 * M_PI) * C * integrate1d(&PSF_cylinder, params, 0.0, r) - params->v;
 }
 
-double int_psf_cylinder(double r, void * params)
+double int_psf_cylinder(double const r, void * params)
 {
     return int_psf_cylinder(r, static_cast<PSF_cylinder_params*>(params));
 }
 
 double int_psf_cylinder(
-    double rmin, double rmax, double z, double k, double N_A)
+    double const rmin, double const rmax, double const z, double const k, double const N_A)
 {
     struct PSF_cylinder_params params = {z, k, N_A};
     return int_psf_cylinder(rmin, rmax, &params);
 }
 
 double int_psf_gaussian(
-    double xmin, double xmax, double ymin, double ymax,
-    double p[3], double c[3], double k, double N_A)
+    double const xmin, double const xmax, double const ymin, double const ymax,
+    double p[3], double c[3], double const k, double const N_A)
 {
     // const double sigma(sqrt(2.0) / (k * N_A)); //  The variance of Gaussian changes linearly with the axial axis, p[2].
     const double sigma(

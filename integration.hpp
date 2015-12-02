@@ -12,8 +12,8 @@ namespace microscope
 {
 
 double integrate1d_simpson(
-    double (* function)(double, void*), void * params,
-    double xmin, double xmax, const unsigned int N = 10)
+    double (* function)(double const, void*), void * params,
+    double const xmin, double const xmax, const unsigned int N = 10)
 {
     const double delta((xmax - xmin) / N);
 
@@ -36,8 +36,8 @@ double integrate1d_simpson(
 }
 
 double integrate1d_gsl_qng(
-    double (* function)(double, void*), void * params,
-    double xmin, double xmax)
+    double (* function)(double const, void*), void * params,
+    double const xmin, double const xmax)
 {
     gsl_function F;
     F.function = function;
@@ -53,8 +53,8 @@ double integrate1d_gsl_qng(
 }
 
 double integrate1d_gsl_qags(
-    double (* function)(double, void*), void * params,
-    double xmin, double xmax)
+    double (* function)(double const, void*), void * params,
+    double const xmin, double const xmax)
 {
     gsl_integration_workspace * w = gsl_integration_workspace_alloc(1000);
 
@@ -72,8 +72,8 @@ double integrate1d_gsl_qags(
 }
 
 inline double integrate1d(
-    double (* function)(double, void*), void * params,
-    double xmin, double xmax)
+    double (* function)(double const, void*), void * params,
+    double const xmin, double const xmax)
 {
     return integrate1d_gsl_qags(function, params, xmin, xmax);
     // return integrate1d_gsl_qng(function, params, xmin, xmax);
@@ -82,11 +82,11 @@ inline double integrate1d(
 struct Fxy_params
 {
     double x;
-    double (* function) (double x, double y, void * params);
+    double (* function) (double const x, double const y, void * params);
     void * params;
 };
 
-double Fxy(double y, void *params)
+double Fxy(double const y, void *params)
 {
     struct Fxy_params *p = (struct Fxy_params *) params;
     return p->function(p->x, y, p->params);
@@ -95,11 +95,11 @@ double Fxy(double y, void *params)
 struct Fx_params
 {
     double ymin, ymax;
-    double (* function) (double x, double y, void * params);
+    double (* function) (double const x, double const y, void * params);
     void* params;
 };
 
-double Fx_gsl_qags(double x, void *params)
+double Fx_gsl_qags(double const x, void *params)
 {
     struct Fx_params *p = (struct Fx_params *) params;
     struct Fxy_params newp = {x, p->function, p->params};
@@ -107,14 +107,14 @@ double Fx_gsl_qags(double x, void *params)
 }
 
 double integrate2d_gsl_qags(
-    double (* function)(double, double, void*), void * params,
-    double xmin, double xmax, double ymin, double ymax)
+    double (* function)(double const, double const, void*), void * params,
+    double const xmin, double const xmax, double const ymin, double const ymax)
 {
     struct Fx_params p = {ymin, ymax, function, params};
     return integrate1d_gsl_qags(&Fx_gsl_qags, &p, xmin, xmax);
 }
 
-double Fx_simpson(double x, void *params)
+double Fx_simpson(double const x, void *params)
 {
     struct Fx_params *p = (struct Fx_params *) params;
     struct Fxy_params newp = {x, p->function, p->params};
@@ -122,8 +122,8 @@ double Fx_simpson(double x, void *params)
 }
 
 double integrate2d_simpson(
-    double (* function)(double, double, void*), void * params,
-    double xmin, double xmax, double ymin, double ymax)
+    double (* function)(double const, double const, void*), void * params,
+    double const xmin, double const xmax, double const ymin, double const ymax)
 {
     struct Fx_params p = {ymin, ymax, function, params};
     return integrate1d_simpson(&Fx_simpson, &p, xmin, xmax);
@@ -133,11 +133,12 @@ double integrate2d_simpson(
 
 struct hcubature_params
 {
-    double (* function)(double, double, void*);
+    double (* function)(double const, double const, void*);
     void *params;
 };
 
-int F_hcubature(unsigned ndim, const double *x, void *fdata, unsigned fdim, double *fval)
+int F_hcubature(
+    unsigned const ndim, const double *x, void *fdata, unsigned const fdim, double *fval)
 {
     struct hcubature_params *p = (struct hcubature_params *) fdata;
     fval[0] = p->function(x[0], x[1], p->params);
@@ -145,8 +146,8 @@ int F_hcubature(unsigned ndim, const double *x, void *fdata, unsigned fdim, doub
 }
 
 double integrate2d_hcubature(
-    double (* function)(double, double, void*), void * params,
-    double x0min, double x0max, double x1min, double x1max)
+    double (* function)(double const, double const, void*), void * params,
+    double const x0min, double const x0max, double const x1min, double const x1max)
 {
     struct hcubature_params p = {function, params};
     double xmin[2] = {x0min, x1min}, xmax[2] = {x0max, x1max}, val, err;
@@ -160,16 +161,16 @@ double integrate2d_hcubature(
 #endif /* CUBATURE */
 
 inline double integrate2d(
-    double (* function)(double, double, void*), void * params,
-    double xmin, double xmax, double ymin, double ymax)
+    double (* function)(double const, double const, void*), void * params,
+    double const xmin, double const xmax, double const ymin, double const ymax)
 {
     return integrate2d_gsl_qags(function, params, xmin, xmax, ymin, ymax);
     // return integrate2d_hcubature(function, params, xmin, xmax, ymin, ymax);
 }
 
-double find_root(double (* function)(double, void*), void * params,
-                 gsl_root_fsolver* solver, double low, double high,
-                 double tol_abs, double tol_rel)
+double find_root(double (* function)(double const, void*), void * params,
+                 gsl_root_fsolver* solver, double const low, double const high,
+                 double const tol_abs, double const tol_rel)
 {
     gsl_function F;
     F.function = function;

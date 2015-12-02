@@ -15,14 +15,14 @@ struct F_born_wolf_psf_params
     double psi;
 };
 
-double F_born_wolf_psf_real(double rho, void *params)
+double F_born_wolf_psf_real(double const rho, void *params)
 {
     struct F_born_wolf_psf_params *p
         = (struct F_born_wolf_psf_params *) params;
     return gsl_sf_bessel_J0(p->alpha_r * rho) * cos(p->psi * rho * rho) * rho;
 }
 
-double F_born_wolf_psf_imag(double rho, void *params)
+double F_born_wolf_psf_imag(double const rho, void *params)
 {
     struct F_born_wolf_psf_params *p
         = (struct F_born_wolf_psf_params *) params;
