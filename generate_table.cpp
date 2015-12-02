@@ -30,6 +30,24 @@ int main(int argc, char** argv)
     const double dr(rmax / N);
     const double dz(zmax / M);
 
+    #ifdef _OPENMP
+    boost::array<double, M * N> psf_table;
+
+    #pragma omp parallel for
+    for (unsigned int m = 0; m < M; ++m)
+    {
+        const double z(m * dz);
+
+        for (unsigned int n = 0; n < N; ++n)
+        {
+            const double r(n * dr);
+            psf_table[m * N + n] = born_wolf_psf(r, z, 1.0, 1.0);
+        }
+
+        std::cout << m + 1 << " / " << M << std::endl;
+    }
+    #endif
+
     std::ofstream fout;
     fout.open(filename.c_str());
     fout.setf(std::ios::scientific);
@@ -61,13 +79,19 @@ int main(int argc, char** argv)
         for (unsigned int n(0); n < N; ++n)
         {
             const double r(n * dr);
+            #ifdef _OPENMP
+            const double val(psf_table[m * N + n]);
+            #else
             const double val(born_wolf_psf(r, z, 1.0, 1.0));
+            #endif
 
             fout << "        " << val
                 << (n != N - 1 || m != M - 1 ? "," : "") << std::endl;
         }
 
+        #ifndef _OPENMP
         std::cout << m + 1 << " / " << M << std::endl;
+        #endif
     }
     fout << "};" << std::endl;
     fout << std::endl;
