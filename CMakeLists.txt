@@ -20,10 +20,6 @@ add_custom_command(
     DEPENDS generate_table)
 add_custom_target(psf_tables ALL DEPENDS ${PROJECT_BINARY_DIR}/born_wolf_psf_table.hpp)
 
-add_executable(microscope main.cpp)
-target_link_libraries(microscope ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
-add_dependencies(microscope psf_tables)
-
 add_executable(main main.cpp)
 target_link_libraries(main ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
 add_dependencies(main psf_tables)

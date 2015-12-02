@@ -355,7 +355,7 @@ int main(int argc, char** argv)
                 const double photons(data[i * N_pixel + j]);
                 const double photoelectrons(
                     cmos_detection_function(r, photons));
-                data[i * N_pixel + j] = photoelectrons;
+                // data[i * N_pixel + j] = photoelectrons;
                 data[i * N_pixel + j] = static_cast<double>(
                     convert_analog_to_digital(photoelectrons));
             }
