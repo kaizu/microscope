@@ -20,4 +20,8 @@ $ python plot.py
 $ g++ -Icubature-1.0.2 -DCUBATURE main.cpp cubature-1.0.2/hcubature.c -lgsl -lcblas
 ```
 
+```
+$ OMP_NUM_THREADS=5 ./main test*.csv
+```
+
 ![doc/result.txt.png](doc/result.txt.png)

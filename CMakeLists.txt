@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 2.6)
 project(microscope)
+
+find_package(OpenMP)
+if(OPENMP_FOUND)
+    add_definitions(${OpenMP_CXX_FLAGS})
+    set(CMAKE_EXE_LINKER_FLAGS "${OpenMP_CXX_FLAGS} ${CMAKE_EXE_LINKER_FLAGS}")
+    set(CMAKE_SHARED_LINKER_FLAGS "${OpenMP_CXX_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")
+    set(CMAKE_MODULE_LINKER_FLAGS "${OpenMP_CXX_FLAGS} ${CMAKE_MODULE_LINKER_FLAGS}")
+endif()
+
 find_library(GSL_LIBRARIES gsl)
 find_library(GSL_CBLAS_LIBRARIES gslcblas)
 

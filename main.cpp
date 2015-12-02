@@ -266,6 +266,7 @@ int main(int argc, char** argv)
     // const unsigned int N_point(17200);
     // const unsigned int N_point(1000);
     const unsigned int N_point(2620);
+
     if (argc == 1)
     {
         double points[N_point][3];
@@ -288,7 +289,13 @@ int main(int argc, char** argv)
         double scale = 1000.0;
 
         const unsigned int frames(argc - 1);
-        for (unsigned int cnt(0); cnt < frames; ++cnt)
+
+        #ifdef _OPENMP
+        std::vector<boost::array<double, N_pixel * N_pixel> > tmp(frames);
+
+        #pragma omp parallel for reduction(+:Itot)
+        #endif
+        for (unsigned int cnt = 0; cnt < frames; ++cnt)
         {
             // std::string const filename(
             //     (boost::format("sample_data3/test%03d.csv")
@@ -299,17 +306,36 @@ int main(int argc, char** argv)
             double intensity[N_point];
             read_input(filename.c_str(), points, intensity, N_point, shift, scale);
 
+            #ifdef _OPENMP
+            tmp[cnt].fill(0.0);
+            #endif
+
             for (unsigned int i(0); i < N_point; ++i)
             {
                 std::cout << "[" << cnt << ":" << i << "/"
                     << N_point << "] = " << point_as_str(points[i]) << std::endl;
 
                 const double I(intensity[i] / frames);
+                #ifdef _OPENMP
+                overlay_psf(tmp[cnt].data(), N_pixel, pixel_length,
+                    points[i], I, focal_point, k, N_A, cutoff);
+                #else
                 overlay_psf(data.data(), N_pixel, pixel_length,
                     points[i], I, focal_point, k, N_A, cutoff);
+                #endif
                 Itot += I;
             }
         }
+
+        #ifdef _OPENMP
+        for (unsigned int cnt = 0; cnt < frames; ++cnt)
+        {
+            for (unsigned int i = 0; i < N_pixel * N_pixel; ++i)
+            {
+                data[i] += tmp[cnt][i];
+            }
+        }
+        #endif
     }
 
     const double I(boost::accumulate(data, 0.0));
