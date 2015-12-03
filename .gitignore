@@ -1,1 +1,13 @@
 a.out
+*.swp
+CMakeCache.txt
+CMakeFiles/
+Makefile
+born_wolf_psf_table.hpp
+build/
+cmake_install.cmake
+generate_table
+microscope.cpp
+microscope.so
+result.txt
+result.txt.png
