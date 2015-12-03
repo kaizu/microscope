@@ -7,8 +7,8 @@
 #include <boost/range/numeric.hpp>
 #include <boost/format.hpp>
 
-#include "point_spreading_functions.hpp"
-#include "detection.hpp"
+#include "microscope.hpp"
+
 using namespace microscope;
 
 
@@ -65,77 +65,63 @@ std::string point_as_str(double p[3])
 //     }
 // }
 
-double emission(double const z)
-{
-    const double ATsq(1.16737230263e+25);
-    const double d(1.01896194663e+03); // nm
-    // const double epsilon(1e-6);
-    const double epsilon(1.0);
-    const double absorption_cross_section(2e-18);
-    // const double absorption_cross_section(1e-9 * 1e-9);
-    const double exposure_time(100e-3);
-
-    return (ATsq * exp(-z / d) * absorption_cross_section
-        * exposure_time * epsilon / (4 * M_PI));
-}
-
-void overlay_psf(
-    double data[], unsigned int const N_pixel, double const pixel_length,
-    double p[3], double const I, double c[3], double const k, double const N_A,
-    double const cutoff)
-{
-    const double offset(N_pixel * pixel_length * -0.5);
-    const double x(p[0] - c[0] - offset);
-    const double y(p[1] - c[1] - offset);
-    const unsigned int imin(
-        static_cast<unsigned int>(
-            std::max(0.0, floor((x - cutoff) / pixel_length))));
-    const unsigned int imax(
-        std::min(N_pixel,
-            static_cast<unsigned int>(ceil((x + cutoff) / pixel_length))));
-    const unsigned int jmin(
-        static_cast<unsigned int>(
-            std::max(0.0, floor((y - cutoff) / pixel_length))));
-    const unsigned int jmax(
-        std::min(N_pixel,
-            static_cast<unsigned int>(ceil((y + cutoff) / pixel_length))));
-
-    for (unsigned int i(imin); i < imax; ++i)
-    {
-        const double xmin(pixel_length * i + offset);
-        const double xmax(xmin + pixel_length);
-
-        for (unsigned int j(jmin); j < jmax; ++j)
-        {
-            const double ymin(pixel_length * j + offset);
-            const double ymax(ymin + pixel_length);
-
-            // const double value(int_psf_gaussian(
-            //     xmin, xmax, ymin, ymax, p, c, k, N_A));
-            const double value(int_psf_tbl(
-                xmin, xmax, ymin, ymax, p, c, k, N_A));
-            data[i * N_pixel + j] += I * value;
-        }
-    }
-
-    // for (unsigned int i(0); i < N_pixel; ++i)
-    // {
-    //     const double xmin(pixel_length * (i - N_pixel * 0.5));
-    //     const double xmax(xmin + pixel_length);
-    //     for (unsigned int j(0); j < N_pixel; ++j)
-    //     {
-    //         const double ymin(pixel_length * (j - N_pixel * 0.5));
-    //         const double ymax(ymin + pixel_length);
-
-    //         const double value(int_psf_with_cutoff(
-    //             p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff));
-    //         data[i * N_pixel + j] += I * value;
-    //     }
-    // }
-}
+// void overlay_psf(
+//     double data[], unsigned int const N_pixel, double const pixel_length,
+//     double p[3], double const I, double c[3], double const k, double const N_A,
+//     double const cutoff)
+// {
+//     const double offset(N_pixel * pixel_length * -0.5);
+//     const double x(p[0] - c[0] - offset);
+//     const double y(p[1] - c[1] - offset);
+//     const unsigned int imin(
+//         static_cast<unsigned int>(
+//             std::max(0.0, floor((x - cutoff) / pixel_length))));
+//     const unsigned int imax(
+//         std::min(N_pixel,
+//             static_cast<unsigned int>(ceil((x + cutoff) / pixel_length))));
+//     const unsigned int jmin(
+//         static_cast<unsigned int>(
+//             std::max(0.0, floor((y - cutoff) / pixel_length))));
+//     const unsigned int jmax(
+//         std::min(N_pixel,
+//             static_cast<unsigned int>(ceil((y + cutoff) / pixel_length))));
+// 
+//     for (unsigned int i(imin); i < imax; ++i)
+//     {
+//         const double xmin(pixel_length * i + offset);
+//         const double xmax(xmin + pixel_length);
+// 
+//         for (unsigned int j(jmin); j < jmax; ++j)
+//         {
+//             const double ymin(pixel_length * j + offset);
+//             const double ymax(ymin + pixel_length);
+// 
+//             // const double value(int_psf_gaussian(
+//             //     xmin, xmax, ymin, ymax, p, c, k, N_A));
+//             const double value(int_psf_tbl(
+//                 xmin, xmax, ymin, ymax, p, c, k, N_A));
+//             data[i * N_pixel + j] += I * value;
+//         }
+//     }
+// 
+//     // for (unsigned int i(0); i < N_pixel; ++i)
+//     // {
+//     //     const double xmin(pixel_length * (i - N_pixel * 0.5));
+//     //     const double xmax(xmin + pixel_length);
+//     //     for (unsigned int j(0); j < N_pixel; ++j)
+//     //     {
+//     //         const double ymin(pixel_length * (j - N_pixel * 0.5));
+//     //         const double ymax(ymin + pixel_length);
+// 
+//     //         const double value(int_psf_with_cutoff(
+//     //             p, c, k, N_A, xmin, xmax, ymin, ymax, cutoff));
+//     //         data[i * N_pixel + j] += I * value;
+//     //     }
+//     // }
+// }
 
 void generate_random_points(
-    double points[][3], double intensity[], unsigned int const N_point, double const L)
+    double points[][3], unsigned int const N_point, double const L)
 {
     assert(N_point >= 200);
 
@@ -148,7 +134,7 @@ void generate_random_points(
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
         points[i][2] = gsl_rng_uniform(r) * 3000;
-        intensity[i] = emission(points[i][2]);
+        // intensity[i] = emission(points[i][2]);
     }
 
     for (unsigned int i(N_point - 200); i < N_point; ++i)
@@ -156,7 +142,7 @@ void generate_random_points(
         points[i][0] = L * (0.5 - gsl_rng_uniform(r));
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
         points[i][2] = 0.0;
-        intensity[i] = emission(points[i][2]);
+        // intensity[i] = emission(points[i][2]);
     }
 
     gsl_rng_free(r);
@@ -176,7 +162,7 @@ void save_data(char const filename[], double data[], unsigned int const data_siz
 }
 
 void read_input(
-    char const filename[], double points[][3], double intensity[], unsigned int const data_size,
+    char const filename[], double points[][3], unsigned int const data_size,
     double shift[3], double const scale)
 {
     std::ifstream fin(filename);
@@ -236,7 +222,7 @@ void read_input(
         points[i][0] = (x - shift[0]) * scale;
         points[i][1] = (y - shift[1]) * scale;
         points[i][2] = fabs(z - shift[2]) * scale;
-        intensity[i] = emission(points[i][2]);
+        // intensity[i] = emission(points[i][2]);
         // std::cout << point_as_str(points[i]) << std::endl;
         i++;
     };
@@ -271,7 +257,8 @@ int main(int argc, char** argv)
     {
         double points[N_point][3];
         double intensity[N_point];
-        generate_random_points(points, intensity, N_point, L);
+        generate_random_points(points, N_point, L);
+        emission(points, intensity, N_point);
 
         for (unsigned int i(0); i < N_point; ++i)
         {
@@ -304,7 +291,8 @@ int main(int argc, char** argv)
 
             double points[N_point][3];
             double intensity[N_point];
-            read_input(filename.c_str(), points, intensity, N_point, shift, scale);
+            read_input(filename.c_str(), points, N_point, shift, scale);
+            emission(points, intensity, N_point);
 
             #ifdef _OPENMP
             tmp[cnt].fill(0.0);
@@ -343,25 +331,26 @@ int main(int argc, char** argv)
     std::cout << "The total intensity of PSFs is " << Itot << std::endl;
     std::cout << "The relative error is " << fabs(Itot - I) / Itot << std::endl;
 
-    {
-        gsl_rng_env_setup();
-        const gsl_rng_type * T = gsl_rng_default;
-        gsl_rng * r = gsl_rng_alloc(T);
+    detection(data.data(), data.data(), N_pixel * N_pixel);
+    // {
+    //     gsl_rng_env_setup();
+    //     const gsl_rng_type * T = gsl_rng_default;
+    //     gsl_rng * r = gsl_rng_alloc(T);
 
-        for (unsigned int i(0); i < N_pixel; ++i)
-        {
-            for (unsigned int j(0); j < N_pixel; ++j)
-            {
-                const double photons(data[i * N_pixel + j]);
-                const double photoelectrons(
-                    cmos_detection_function(r, photons));
-                // data[i * N_pixel + j] = photoelectrons;
-                data[i * N_pixel + j] = static_cast<double>(
-                    convert_analog_to_digital(photoelectrons));
-            }
-        }
-        gsl_rng_free(r);
-    }
+    //     for (unsigned int i(0); i < N_pixel; ++i)
+    //     {
+    //         for (unsigned int j(0); j < N_pixel; ++j)
+    //         {
+    //             const double photons(data[i * N_pixel + j]);
+    //             const double photoelectrons(
+    //                 cmos_detection_function(r, photons));
+    //             // data[i * N_pixel + j] = photoelectrons;
+    //             data[i * N_pixel + j] = static_cast<double>(
+    //                 convert_analog_to_digital(photoelectrons));
+    //         }
+    //     }
+    //     gsl_rng_free(r);
+    // }
 
     // save_data((boost::format("result%03d.txt") % (frames)).str().c_str(),
     //           data.data(), N_pixel * N_pixel);
