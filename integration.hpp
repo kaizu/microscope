@@ -1,6 +1,8 @@
 #ifndef __MICROSCOPE__INTEGRATION
 #define __MICROSCOPE__INTEGRATION
 
+#include <stdexcept>
+
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_roots.h>
 

@@ -1,14 +1,7 @@
 #ifndef __MICROSCOPE__MICROSCOPE
 #define __MICROSCOPE__MICROSCOPE
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <gsl/gsl_rng.h>
-#include <boost/array.hpp>
-#include <boost/range/numeric.hpp>
-#include <boost/format.hpp>
-
+#include <algorithm>
 #include <gsl/gsl_rng.h>
 
 #include "point_spreading_functions.hpp"

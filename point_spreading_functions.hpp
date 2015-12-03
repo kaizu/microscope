@@ -1,6 +1,8 @@
 #ifndef __MICROSCOPE__POINT_SPREADING_FUNCTIONS
 #define __MICROSCOPE__POINT_SPREADING_FUNCTIONS
 
+#include <iostream>
+
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_erf.h>
 
