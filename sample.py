@@ -47,9 +47,49 @@ def plot_data(data, N_pixel):
     # plt.savefig("%s.png" % filename)
     plt.show()
 
+def overlay_psf_from_files(
+        filenames, N_pixel, N_point, pixel_length, focal_point, k, N_A, cutoff):
+    data = np.zeros(N_pixel * N_pixel, dtype=np.float64)
+
+    shift = np.array([15, 15, 1.5], dtype=np.float64)
+    scale = 1000.0
+
+    N_point = 2620
+
+    points = np.zeros((N_point, 3), dtype=np.float64)
+    intensity = np.zeros(N_point, dtype=np.float64)
+
+    for filename in filenames:
+        print('=> {}'.format(filename))
+
+        read_input(filename, points, N_point, shift, scale)
+        microscope.emission(points, intensity)
+
+        for i in range(N_point):
+            I = intensity[i]
+            microscope.overlay_psf(
+                data, N_pixel, pixel_length, points[i], intensity[i],
+                focal_point, k, N_A, cutoff)
+    return data
+
+def pool_function(*args):
+    try:
+        return overlay_psf_from_files(args[-1], *args[: -1])
+    except KeyboardInterrupt:
+        return None
+
 
 if __name__ == "__main__":
-    import sys
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--np", help="the number of processes", type=int)
+    parser.add_argument(
+        'filenames', metavar='N', type=str, nargs='*', help='input filenames')
+    args = parser.parse_args()
+    proc = 1 if args.np is None else args.np
+    filenames = args.filenames
 
     N_pixel = 600
     k = 2 * np.pi / 508.0
@@ -63,7 +103,7 @@ if __name__ == "__main__":
 
     data = np.zeros(N_pixel * N_pixel, dtype=np.float64)
 
-    if len(sys.argv) == 1:
+    if len(filenames) == 0:
         N_point = 2620
         points = np.zeros((N_point, 3), dtype=np.float64)
         generate_random_points(points, N_point, L)
@@ -76,25 +116,28 @@ if __name__ == "__main__":
                 data, N_pixel, pixel_length, points[i], intensity[i],
                 focal_point, k, N_A, cutoff)
     else:
-        shift = np.array([15, 15, 1.5], dtype=np.float64)
-        scale = 1000.0
+        import multiprocessing as mp
+        import functools
 
-        N_point = 2620
+        pool = mp.Pool(proc)
+        N_point = 17200
+        # N_point = 2620
+        m = int(math.ceil(len(filenames) / float(proc)))
 
-        points = np.zeros((N_point, 3), dtype=np.float64)
+        try:
+            result = pool.map_async(
+                functools.partial(
+                    pool_function,
+                    N_pixel, N_point, pixel_length, focal_point, k, N_A, cutoff),
+                [filenames[i * m: (i + 1) * m] for i in range(proc)])
+        except KeyboardInterrupt as e:
+            pool.terminate()
+            raise e
+        else:
+            pool.close()
+            pool.join()
 
-        filenames = sys.argv[1: ]
-        for filename in filenames:
-            read_input(filename, points, N_point, shift, scale)
-
-            intensity = np.zeros(N_point, dtype=np.float64)
-            microscope.emission(points, intensity)
-
-            for i in range(N_point):
-                I = intensity[i] * len(filenames)
-                microscope.overlay_psf(
-                    data, N_pixel, pixel_length, points[i], intensity[i],
-                    focal_point, k, N_A, cutoff)
+        data = sum(result.get()) / len(filenames)
 
     microscope.detection(data, data, N_pixel * N_pixel)
 
