@@ -2,7 +2,7 @@ import numpy as np
 cimport numpy as np
 import cython
 
-cimport cmicroscope
+cimport decl
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -15,7 +15,7 @@ def emission(
         double exposure_time = 100e-3):
     if data_size is None:
         data_size = intensity.size
-    return cmicroscope.emission(
+    return decl.emission(
         <double (*)[3]>&points[0, 0], &intensity[0], <unsigned int>data_size,
         ATsq, d, epsilon, absorption_cross_section, exposure_time)
 
@@ -28,7 +28,7 @@ def overlay_psf(
         double I,
         np.ndarray[double, ndim=1, mode="c"] c not None,
         double k, double N_A, double cutoff):
-    cmicroscope.overlay_psf(&data[0], N_pixel, pixel_length, &p[0], I, &c[0], k, N_A, cutoff)
+    decl.overlay_psf(&data[0], N_pixel, pixel_length, &p[0], I, &c[0], k, N_A, cutoff)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -38,4 +38,4 @@ def detection(
         data_size = None):
     if data_size is None:
         data_size = input.size
-    cmicroscope.detection(&input[0], &output[0], <unsigned int>data_size)
+    decl.detection(&input[0], &output[0], <unsigned int>data_size)
