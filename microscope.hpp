@@ -15,7 +15,7 @@ double emission(
     double points[][3], double intensity[], unsigned int const data_size,
     double const ATsq = 1.16737230263e+25, double const d = 1.01896194663e+03,
     double const epsilon = 1.0, double const absorption_cross_section = 2e-18,
-    double const exposure_time = 100e-3)
+    double const exposure_time = 100e-3, double const QY = 0.61)
 {
     double Itot = 0.0;
     for (unsigned int i(0); i < data_size; ++i)
@@ -23,8 +23,8 @@ double emission(
         double const z = fabs(points[i][2]);
         double const I = tirf_emission(
             z, ATsq, d, epsilon, absorption_cross_section, exposure_time);
-        intensity[i] = I;
-        Itot += I;
+        intensity[i] *= I;
+        Itot += intensity[i];
     }
     return Itot;
 }
@@ -84,7 +84,7 @@ void overlay_psf(
     // }
 }
 
-void detection(double input[], double output[], unsigned int data_size)
+void cmos_detection(double input[], double output[], unsigned int data_size)
 {
     gsl_rng_env_setup();
     const gsl_rng_type * T = gsl_rng_default;
@@ -96,10 +96,35 @@ void detection(double input[], double output[], unsigned int data_size)
         const double photoelectrons(
             cmos_detection_function(r, photons));
         // data[i] = photoelectrons;
+
         output[i] = static_cast<double>(
-            convert_analog_to_digital(photoelectrons));
+            cmos_convert_analog_to_digital(photoelectrons));
     }
     gsl_rng_free(r);
+}
+
+void emccd_detection(double input[], double output[], unsigned int data_size)
+{
+    gsl_rng_env_setup();
+    const gsl_rng_type * T = gsl_rng_default;
+    gsl_rng * r = gsl_rng_alloc(T);
+
+    for (unsigned int i(0); i < data_size; ++i)
+    {
+        const double photons(input[i]);
+        const double photoelectrons(
+            emccd_detection_function(r, photons));
+        // data[i] = photoelectrons;
+
+        output[i] = static_cast<double>(
+            emccd_convert_analog_to_digital(photoelectrons));
+    }
+    gsl_rng_free(r);
+}
+
+inline void detection(double input[], double output[], unsigned int data_size)
+{
+    cmos_detection(input, output, data_size);
 }
 
 } // microscope

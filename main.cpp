@@ -121,7 +121,7 @@ std::string point_as_str(double p[3])
 // }
 
 void generate_random_points(
-    double points[][3], unsigned int const N_point, double const L)
+    double points[][3], double intensity[], unsigned int const N_point, double const L)
 {
     assert(N_point >= 200);
 
@@ -135,6 +135,7 @@ void generate_random_points(
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
         points[i][2] = gsl_rng_uniform(r) * 3000;
         // intensity[i] = emission(points[i][2]);
+        intensity[i] = 1.0;
     }
 
     for (unsigned int i(N_point - 200); i < N_point; ++i)
@@ -143,6 +144,7 @@ void generate_random_points(
         points[i][1] = L * (0.5 - gsl_rng_uniform(r));
         points[i][2] = 0.0;
         // intensity[i] = emission(points[i][2]);
+        intensity[i] = 1.0;
     }
 
     gsl_rng_free(r);
@@ -257,7 +259,7 @@ int main(int argc, char** argv)
     {
         double points[N_point][3];
         double intensity[N_point];
-        generate_random_points(points, N_point, L);
+        generate_random_points(points, intensity, N_point, L);
         emission(points, intensity, N_point);
 
         for (unsigned int i(0); i < N_point; ++i)

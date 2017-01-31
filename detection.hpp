@@ -3,6 +3,9 @@
 
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_sf_bessel.h>
+#include <math.h>
+#include <cmath>
 
 namespace microscope
 {
@@ -223,16 +226,42 @@ double cmos_detection_function(const gsl_rng* rng, const double photons)
     return photoelectrons;
 }
 
-unsigned int convert_analog_to_digital_with_no_fixed_pattern_noise(
-    const double photoelectrons)
+double emccd_detection_function(const gsl_rng* rng, const double photons)
 {
-    const double fullwell(30000);
-    const double ADC0(100);
-    const unsigned int bit(16);
+    const double QE(0.92); // Quantum Efficiency
+    const double background_noise(1.0);
+    const double EM_gain(300.0);
+    const double readout_noise(200.0);
+
+    const double expectations(QE * photons + background_noise);
+
+    // const double alpha(1.0 / EM_gain);
+    // double PDF[12000];
+    // PDF[0] = exp(-expectations);
+    // for (unsigned int electrons = 1; electrons < 12000; ++electrons)
+    // {
+    //     PDF[electrons] = sqrt(alpha * expectations / electrons) * exp(-alpha * electrons - expectations) * gsl_sf_bessel_I1(2 * sqrt(alpha * expectations * electrons));
+    // }
+
+    // gsl_ran_discrete_t *f;
+    // f = gsl_ran_discrete_preproc(12000, PDF);
+    // const unsigned int signal = gsl_ran_discrete(rng, f);
+    const unsigned int signal = std::ceil(expectations);
+
+    const double noise(gsl_ran_gaussian(rng, readout_noise));
+
+    const double photoelectrons(
+        static_cast<double>(signal) + noise);
+    return photoelectrons;
+}
+
+unsigned int convert_analog_to_digital_with_no_fixed_pattern_noise(
+    const double photoelectrons,
+    const double fullwell, const unsigned int bit, const double offset)
+{
     const unsigned int ADC_max(pow(2, bit) - 1);
 
     // FPN_type == None
-    const double offset(ADC0);
     const double gain((fullwell - 0.0) / (ADC_max - offset));
     // const double gain((fullwell - 0.0) / (pow(2.0, bit) - offset));
 
@@ -242,10 +271,23 @@ unsigned int convert_analog_to_digital_with_no_fixed_pattern_noise(
         std::min(static_cast<unsigned int>(ADC), ADC_max), (unsigned int)(0));
 }
 
-inline unsigned int convert_analog_to_digital(const double photoelectrons)
+inline unsigned int cmos_convert_analog_to_digital(const double photoelectrons)
 {
-    return convert_analog_to_digital_with_no_fixed_pattern_noise(photoelectrons);
+    const double fullwell(30000);
+    const double ADC0(100);
+    const unsigned int bit(16);
+    const double offset(ADC0);
+    return convert_analog_to_digital_with_no_fixed_pattern_noise(photoelectrons, fullwell, bit, offset);
 }
+
+inline unsigned int emccd_convert_analog_to_digital(const double photoelectrons)
+{
+    const double fullwell(370000);
+    const unsigned int bit(16);
+    const double offset(2000);
+    return convert_analog_to_digital_with_no_fixed_pattern_noise(photoelectrons, fullwell, bit, offset);
+}
+
 
 } // microscope
 

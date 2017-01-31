@@ -32,29 +32,31 @@ def read_input(filename, points, data_size, shift, scale):
             # if sid != 0:
             #     continue
 
-            points[i][0] = (x - shift[0]) * scale
-            points[i][1] = (y - shift[1]) * scale
-            points[i][2] = math.fabs(z - shift[2]) * scale
+            points[i][0] = (y - shift[0]) * scale
+            points[i][1] = (z - shift[1]) * scale
+            points[i][2] = math.fabs(x - shift[2]) * scale + 650
+            # points[i][0] = (x - shift[0]) * scale
+            # points[i][1] = (y - shift[1]) * scale
+            # points[i][2] = math.fabs(z - shift[2]) * scale + 650
             i += 1
 
 def plot_data(data, N_pixel):
     import matplotlib.pylab as plt
 
-    plt.imshow(data.reshape((N_pixel, N_pixel)), interpolation='none')
+    #plt.imshow(data.reshape((N_pixel, N_pixel)), interpolation='none', cmap=plt.cm.gray)
+    plt.imshow(data.reshape((N_pixel, N_pixel)), interpolation='none', cmap=plt.cm.viridis)
     # plt.xlim(270, 330)
     # plt.ylim(270, 330)
     plt.colorbar()
-    # plt.savefig("%s.png" % filename)
+    plt.savefig("result.txt.png")
     plt.show()
 
 def overlay_psf_from_files(
         filenames, N_pixel, N_point, pixel_length, focal_point, k, N_A, cutoff):
     data = np.zeros(N_pixel * N_pixel, dtype=np.float64)
 
-    shift = np.array([15, 15, 1.5], dtype=np.float64)
+    shift = np.array([15, 15, 0.5], dtype=np.float64)
     scale = 1000.0
-
-    N_point = 2620
 
     points = np.zeros((N_point, 3), dtype=np.float64)
     intensity = np.zeros(N_point, dtype=np.float64)
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--np", help="the number of processes", type=int)
     parser.add_argument(
-        'filenames', metavar='N', type=str, nargs='*', help='input filenames')
+        'filenames', metavar='FILENAME', type=str, nargs='*', help='an input filename')
     args = parser.parse_args()
     proc = 1 if args.np is None else args.np
     filenames = args.filenames
@@ -119,9 +121,12 @@ if __name__ == "__main__":
         import multiprocessing as mp
         import functools
 
-        pool = mp.Pool(proc)
-        N_point = 17200
+        # N_point = 17200
         # N_point = 2620
+        # N_point = 1000
+        N_point = 1000
+
+        pool = mp.Pool(proc)
         m = int(math.ceil(len(filenames) / float(proc)))
 
         try:
@@ -140,5 +145,6 @@ if __name__ == "__main__":
         data = sum(result.get()) / len(filenames)
 
     microscope.detection(data, data, N_pixel * N_pixel)
+    np.savetxt("result.txt", data)
 
     plot_data(data, N_pixel)
