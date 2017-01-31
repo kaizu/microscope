@@ -31,4 +31,8 @@ $ python setup.py build_ext --inplace
 $ python sample.py
 ```
 
+```
+$ cmake -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-8.0 .
+```
+
 ![doc/result.txt.png](doc/result.txt.png)
