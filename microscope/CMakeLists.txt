@@ -12,12 +12,12 @@ find_library(GSL_CBLAS_LIBRARIES gslcblas)
 add_executable(generate_table generate_table.cpp)
 target_link_libraries(generate_table ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
 add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/microscope/born_wolf_psf_table.hpp
-    COMMAND generate_table ${PROJECT_BINARY_DIR}/microscope/born_wolf_psf_table.hpp
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/born_wolf_psf_table.hpp
+    COMMAND generate_table ${CMAKE_CURRENT_BINARY_DIR}/born_wolf_psf_table.hpp
     DEPENDS generate_table)
-add_custom_target(psf_tables ALL DEPENDS ${PROJECT_BINARY_DIR}/microscope/born_wolf_psf_table.hpp)
+add_custom_target(psf_tables ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/born_wolf_psf_table.hpp)
 
-include_directories(${PROJECT_SOURCE_DIR}/microscope ${PROJECT_BINARY_DIR}/microscope)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(main main.cpp)
 target_link_libraries(main ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
