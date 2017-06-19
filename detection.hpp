@@ -231,27 +231,58 @@ double emccd_detection_function(const gsl_rng* rng, const double photons)
     const double QE(0.92); // Quantum Efficiency
     const double background_noise(1.0);
     const double EM_gain(300.0);
-    const double readout_noise(200.0);
+    const double readout_noise(330.0); //XXX:
+    // const double readout_noise(100.0);
+    const unsigned int dynodes(11);  // the number of dynode stages
 
-    const double expectations(QE * photons + background_noise);
+    const double expectation(QE * photons + background_noise);
+
+    double electrons(0.0);
+
+    {
+        // Truncated Gaussian Approximation
+        // (Eq. 7) in (R. J. Stokey & P. J. Lee, 1983)
+        const double alpha(expectation);
+        const double A(EM_gain);
+        const double nu(static_cast<double>(dynodes));
+        const double B(0.5 * (A - 1) / (pow(A, 1 / nu) - 1));
+        const double c(exp(alpha * (exp(-A / B) - 1)));
+
+        if (gsl_rng_uniform(rng) > c)
+        {
+            const double my(alpha * A);
+            const double mx(my / (1 - c));
+            const double vary(alpha * A * (A + 2 * B));
+            const double varx(vary / (1 - c) - c * mx * mx);
+
+            do
+            {
+                electrons = mx + gsl_ran_gaussian(rng, sqrt(varx));
+            }
+            while (electrons < 0);
+        }
+    }
+
+    const unsigned int signal = std::ceil(electrons);
 
     // const double alpha(1.0 / EM_gain);
     // double PDF[12000];
-    // PDF[0] = exp(-expectations);
+    // PDF[0] = exp(-expectation);
     // for (unsigned int electrons = 1; electrons < 12000; ++electrons)
     // {
-    //     PDF[electrons] = sqrt(alpha * expectations / electrons) * exp(-alpha * electrons - expectations) * gsl_sf_bessel_I1(2 * sqrt(alpha * expectations * electrons));
+    //     PDF[electrons] = sqrt(alpha * expectation / electrons) * exp(-alpha * electrons - expectation) * gsl_sf_bessel_I1(2 * sqrt(alpha * expectation * electrons));
     // }
 
     // gsl_ran_discrete_t *f;
     // f = gsl_ran_discrete_preproc(12000, PDF);
     // const unsigned int signal = gsl_ran_discrete(rng, f);
-    const unsigned int signal = std::ceil(expectations);
+
+    // const unsigned int signal = std::ceil(expectation);
 
     const double noise(gsl_ran_gaussian(rng, readout_noise));
-
     const double photoelectrons(
         static_cast<double>(signal) + noise);
+    // const double photoelectrons(static_cast<double>(signal));
     return photoelectrons;
 }
 
@@ -284,7 +315,8 @@ inline unsigned int emccd_convert_analog_to_digital(const double photoelectrons)
 {
     const double fullwell(370000);
     const unsigned int bit(16);
-    const double offset(2000);
+    const double offset(1743); //XXX
+    // const double offset(2000);
     return convert_analog_to_digital_with_no_fixed_pattern_noise(photoelectrons, fullwell, bit, offset);
 }
 

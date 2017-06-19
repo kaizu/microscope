@@ -8,6 +8,8 @@
 #include "emission.hpp"
 #include "detection.hpp"
 
+#include <time.h>
+
 namespace microscope
 {
 
@@ -89,6 +91,7 @@ void cmos_detection(double input[], double output[], unsigned int data_size)
     gsl_rng_env_setup();
     const gsl_rng_type * T = gsl_rng_default;
     gsl_rng * r = gsl_rng_alloc(T);
+    gsl_rng_set(r, time(NULL));
 
     for (unsigned int i(0); i < data_size; ++i)
     {
@@ -108,6 +111,7 @@ void emccd_detection(double input[], double output[], unsigned int data_size)
     gsl_rng_env_setup();
     const gsl_rng_type * T = gsl_rng_default;
     gsl_rng * r = gsl_rng_alloc(T);
+    gsl_rng_set(r, time(NULL));
 
     for (unsigned int i(0); i < data_size; ++i)
     {

@@ -3,6 +3,9 @@
 import numpy
 import sys
 import matplotlib.pylab as plt
+import matplotlib
+
+matplotlib.use('Agg')
 
 if len(sys.argv) > 1:
     filenames = sys.argv[1: ]
@@ -15,7 +18,7 @@ for filename in filenames:
     N = numpy.sqrt(Nsq)
     print(N)
     print(data.max(), data.sum())
-
+    N = int(N)
     # num_bins = 50
     # n, bins, patches = plt.hist(data, num_bins, facecolor='green')
 

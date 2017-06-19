@@ -3,7 +3,7 @@
 extern "C" void born_wolf_psf_tbl_gpu(
     double data[], unsigned int const N_pixel, double const pixel_length,
     double points[][3], unsigned int const N_point,
-    double const I, double c[3], double const k, double const N_A,
+    double intensity[], double c[3], double const k, double const N_A,
     double const cutoff);
 
 #include <thrust/host_vector.h>
@@ -20,6 +20,7 @@ typedef struct
 {
     double px;
     double py;
+    double pz;
     double xmin;
     double ymin;
     unsigned int N;
@@ -61,7 +62,8 @@ __global__ void born_wolf_psf_tbl_gpu_kernel(
 
         const double n1 = r * params.alpha_factor;
         const double n2 = floor(n1);
-        const double m1 = 0.0 * params.psi_factor;
+        const double m1 = params.pz * params.psi_factor;
+        // const double m1 = 0.0 * params.psi_factor;
         const double m2 = floor(m1);
         const unsigned int n = static_cast<unsigned int>(n2);
         const unsigned int m = static_cast<unsigned int>(m2);
@@ -163,7 +165,7 @@ __global__ void born_wolf_psf_tbl_gpu_kernel(
 void born_wolf_psf_tbl_gpu(
     double data[], unsigned int const N_pixel, double const pixel_length,
     double points[][3], unsigned int const N_point,
-    double const I, double c[3], double const k, double const N_A,
+    double intensity[], double c[3], double const k, double const N_A,
     double const cutoff)
 {
     const unsigned int N = born_wolf_psf_table::born_wolf_psf_table.N;
@@ -192,6 +194,8 @@ void born_wolf_psf_tbl_gpu(
     {
         const double x = points[cnt][0] - c[0];
         const double y = points[cnt][1] - c[1];
+        const double z = points[cnt][2] - c[2];
+        const double I = intensity[cnt];
 
         const double i0 = floor((x - offset) / pixel_length);
         const double j0 = floor((y - offset) / pixel_length);
@@ -201,10 +205,10 @@ void born_wolf_psf_tbl_gpu(
         const double ymin = jmin * pixel_length + offset;
 
         parameter_type params = {
-            x, y, xmin, ymin,
+            x, y, z, xmin, ymin,
             N, M, imin, jmin, N_pixel,
             pixel_length, delta_length,
-            alpha_factor, psi_factor, C};
+            alpha_factor, psi_factor, C * I};
 
         born_wolf_psf_tbl_gpu_kernel<THREADS><<<dim3(PIXELS, PIXELS, 1), THREADS, THREADS * sizeof(double)>>>(thrust::raw_pointer_cast(d_y.data()), thrust::raw_pointer_cast(d_x.data()), params);
     }

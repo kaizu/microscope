@@ -22,7 +22,8 @@ int main(int argc, char** argv)
     const unsigned int N(2000 + 1);
     const unsigned int M(400 + 1);
     const double rmax(675);
-    const double zmax(120);
+    const double zmax(480);
+    // const double zmax(120);
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(16);
@@ -41,7 +42,7 @@ int main(int argc, char** argv)
         for (unsigned int n = 0; n < N; ++n)
         {
             const double r(n * dr);
-            psf_table[m * N + n] = born_wolf_psf(r, z, 1.0, 1.0);
+            psf_table[m * N + n] = born_wolf_psf(r, z * 2.0, 1.0, 1.0);
         }
 
         std::cout << m + 1 << " / " << M << std::endl;
@@ -82,7 +83,7 @@ int main(int argc, char** argv)
             #ifdef _OPENMP
             const double val(psf_table[m * N + n]);
             #else
-            const double val(born_wolf_psf(r, z, 1.0, 1.0));
+            const double val(born_wolf_psf(r, z * 2.0, 1.0, 1.0));
             #endif
 
             fout << "        " << val
