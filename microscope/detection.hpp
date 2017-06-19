@@ -246,7 +246,7 @@ double emccd_detection_function(const gsl_rng* rng, const double photons)
         const double A(EM_gain);
         const double nu(static_cast<double>(dynodes));
         const double B(0.5 * (A - 1) / (pow(A, 1 / nu) - 1));
-        const double c(exp(alpha * (exp(-A / B) - 1)));
+        const double c(exp(alpha * expm1(-A / B)));  // expm1(x) == exp(x) - 1
 
         if (gsl_rng_uniform(rng) > c)
         {
