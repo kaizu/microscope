@@ -1,7 +1,39 @@
 microscope
 ==========
 
-`libboost-dev` and `libgsl-dev` are required.
+`libboost-dev`, `libgsl-dev`, `cuda` and `cuda-drivers` are required.
+
+```
+$ mkdir build
+$ cd build
+$ cmake -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-9.1 -DCMAKE_INSTALL_PREFIX=./local ..
+$ make
+$ make install
+```
+
+```
+$ ./local/bin/main_gpu
+```
+
+```
+$ OMP_NUM_THREADS=5 ./main test*.csv
+```
+
+```
+$ PYTHONPATH=./local/lib/python3.5/site-packages python ../samples/sample.py
+```
+
+result
+------
+
+```
+$ python ../samples/plot.py result.txt
+```
+
+![doc/result.txt.png](doc/result.txt.png)
+
+more
+----
 
 ```
 $ mkdir build
@@ -11,15 +43,8 @@ $ make
 ```
 
 ```
-$ OMP_NUM_THREADS=5 ./main test*.csv
-```
-
-```
 $ g++ -Icubature-1.0.2 -DCUBATURE main.cpp cubature-1.0.2/hcubature.c -lgsl -lcblas
 ```
-
-python
-------
 
 ```
 $ mkdir build
@@ -31,11 +56,6 @@ $ python setup.py build_ext --inplace
 $ PYTHONPATH=. python ../../samples/sample.py
 ```
 
-gpu
----
-
-`cuda` and `cuda-drivers` are also required.
-
 ```
 $ mkdir build
 $ cd build
@@ -43,12 +63,3 @@ $ cmake -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-9.1 ..
 $ make
 $ ./microscope/main_gpu
 ```
-
-result
-------
-
-```
-$ python ../samples/plot.py result.txt
-```
-
-![doc/result.txt.png](doc/result.txt.png)
