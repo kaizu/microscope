@@ -28,7 +28,8 @@ if (PYTHONINTERP_FOUND)
 
     add_custom_command(
         OUTPUT ${OUTPUT}
-        COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} bdist_wheel
+        # COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} bdist_wheel
+        COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} build_ext
         COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT})
 
     add_custom_target(python ALL DEPENDS ${OUTPUT})

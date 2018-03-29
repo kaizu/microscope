@@ -25,14 +25,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(main main.cpp)
 target_link_libraries(main ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
 add_dependencies(main psf_tables)
+install(TARGETS main DESTINATION bin)
 
-add_executable(test_microscope test.cpp)
-target_link_libraries(test_microscope ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
-add_dependencies(test_microscope psf_tables)
-
-add_executable(psf_property psf_property.cpp)
-target_link_libraries(psf_property ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
-add_dependencies(psf_property psf_tables)
+# add_executable(test_microscope test.cpp)
+# target_link_libraries(test_microscope ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
+# add_dependencies(test_microscope psf_tables)
+# 
+# add_executable(psf_property psf_property.cpp)
+# target_link_libraries(psf_property ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
+# add_dependencies(psf_property psf_tables)
 
 # cmake --help-module FindCUDA
 find_package(CUDA)
@@ -41,4 +42,5 @@ if(CUDA_FOUND)
     add_dependencies(microscope_gpu psf_tables)
     add_executable(main_gpu main_gpu.cpp)
     target_link_libraries(main_gpu microscope_gpu ${CUDA_LIBRARIES} ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
+    install(TARGETS main_gpu DESTINATION bin)
 endif()
