@@ -1,7 +1,7 @@
 microscope
 ==========
 
-`libboost-dev`, `libgsl-dev`, `cuda` and `cuda-drivers` are required.
+`libboost-dev` and `libgsl-dev` are required. `cuda` and `cuda-drivers` are also required for GPU acceleration.
 
 ```
 $ mkdir build
@@ -16,7 +16,7 @@ $ ./local/bin/main_gpu
 ```
 
 ```
-$ OMP_NUM_THREADS=5 ./main test*.csv
+$ OMP_NUM_THREADS=5 ./local/bin/main test*.csv
 ```
 
 ```
