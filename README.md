@@ -41,7 +41,7 @@ $ mkdir build
 $ cd build
 $ cmake -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-9.1 ..
 $ make
-$ ./microscope/main
+$ ./microscope/main_gpu
 $ python ../samples/plot.py result.txt
 ```
 
