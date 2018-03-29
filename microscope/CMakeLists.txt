@@ -9,6 +9,9 @@ endif()
 find_library(GSL_LIBRARIES gsl)
 find_library(GSL_CBLAS_LIBRARIES gslcblas)
 
+find_library(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 add_executable(generate_table generate_table.cpp)
 target_link_libraries(generate_table ${GSL_LIBRARIES} ${GSL_CBLAS_LIBRARIES})
 add_custom_command(
