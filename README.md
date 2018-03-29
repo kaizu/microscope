@@ -22,10 +22,13 @@ python
 ------
 
 ```
-$ cmake .
+$ mkdir build
+$ cd build
+$ cmake ..
 $ make psf_tables
+$ cd python
 $ python setup.py build_ext --inplace
-$ python samples/sample.py
+$ PYTHONPATH=. python ../../samples/sample.py
 ```
 
 gpu
