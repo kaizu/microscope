@@ -2,10 +2,9 @@
 
 import numpy
 import sys
-import matplotlib.pylab as plt
 import matplotlib
-
 matplotlib.use('Agg')
+import matplotlib.pylab as plt
 
 if len(sys.argv) > 1:
     filenames = sys.argv[1: ]
@@ -30,5 +29,5 @@ for filename in filenames:
     plt.colorbar()
 
     plt.savefig("%s.png" % filename)
-    plt.show()
-    plt.clf()
+    # plt.show()
+    # plt.clf()
