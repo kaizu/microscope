@@ -1,6 +1,8 @@
 microscope
 ==========
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/42c73eb47bf240c38a730689a3b73188)](https://app.codacy.com/app/kwaizu/microscope?utm_source=github.com&utm_medium=referral&utm_content=kaizu/microscope&utm_campaign=Badge_Grade_Dashboard)
+
 `libboost-dev` and `libgsl-dev` are required. `cuda` and `cuda-drivers` are also required for GPU acceleration.
 
 ```
